@@ -3,7 +3,7 @@
 
 int main() {
 
-	printf("Hi, the project config it's working!\n");
+	printf("Hi, the project config is working!\n");
 
 	return 0;
 }
