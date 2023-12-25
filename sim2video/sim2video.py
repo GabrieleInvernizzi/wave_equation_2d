@@ -23,12 +23,19 @@ def main():
 
     print(f"Rendering \"{sim_name}\"...")
 
-    info, sim_data = sim_data.split(b'\n', maxsplit=1)
+    info, sim_data_raw = sim_data.split(b'\n', maxsplit=1)
     
-    rows, cols, steps, fps = info.split(b'-')
-    rows, cols, steps, fps = int(rows), int(cols), int(steps), int(fps)
+    dt, rows, cols, steps, fps = info.split(b'-')
+    dt, rows, cols, steps, fps = int(dt), int(rows), int(cols), int(steps), int(fps)
+    
+    if dt == 8:
+        sim_data = np.frombuffer(sim_data_raw, np.float64).reshape((rows, cols, steps))
+    elif dt == 4:
+        sim_data = np.frombuffer(sim_data_raw, np.float32).reshape((rows, cols, steps))
+    else:
+        print(f"Can't work with double of size = {dt}. Exiting.")
+        sys.exit(3)
 
-    sim_data = np.frombuffer(sim_data, np.float64).reshape((rows, cols, steps))
 
     min_simdata = np.min(sim_data)
     max_simdata = np.max(sim_data)
