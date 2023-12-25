@@ -3,7 +3,7 @@ CC := gcc
 ifeq ($(release),true)
 	CFLAGS := -O2
 else
-	CFLAGS := -g -O0
+	CFLAGS := -g -O2
 endif
 
 BIN_PATH := bin
@@ -11,6 +11,7 @@ OBJ_PATH_BASE := bin/objs
 OBJ_PATH_SERIAL := $(OBJ_PATH_BASE)/serial
 SRC_PATH_BASE := src
 SRC_PATH_SERIAL := $(SRC_PATH_BASE)/serial
+LIBS=-lm
 TARGET_NAME := wave_eq
 TARGET_NAME_SERIAL := $(TARGET_NAME)_s
 TARGET := $(BIN_PATH)/$(TARGET_NAME)
@@ -28,7 +29,7 @@ default: makedir all
 
 # non-phony targets
 $(TARGET_SERIAL): $(OBJ_SERIAL)
-	$(CC) $(CFLAGS) -o $@ $(OBJ_SERIAL)
+	$(CC) $(CFLAGS) -o $@ $(OBJ_SERIAL) $(LIBS)
 
 $(OBJ_PATH_SERIAL)/%.o: $(SRC_PATH_SERIAL)/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -43,7 +44,7 @@ all: $(TARGET_SERIAL)
 
 .PHONY: clean
 clean:
-	@rm -fR $(TARGET_SERIAL) $(OBJ_PATH_SERIAL)
+	@rm -fR $(TARGET_SERIAL) $(OBJ_SERIAL)
 	@echo Project cleaned.
 
 .PHONY: run_serial
