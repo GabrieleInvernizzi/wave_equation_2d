@@ -10,11 +10,10 @@ const double SIM_DURATION = 10;
 const double dt = 0.01;
 const size_t TIMESTEPS = (size_t)(SIM_DURATION / dt);
 
-const unsigned int framerate = 30;
 const size_t save_period = 2;
+const unsigned int framerate = 1.0/(dt*save_period);
 
 const double c = 1;
-const double c_sq = c*c;
 const double domain_width = 10;
 const double domain_height = 10;
 const double dx = 0.01;
@@ -34,13 +33,20 @@ int main() {
 		printf("Can't create the file \"%s\". Exiting.\n", filepath);
 		return 1;
 	}
-	fprintf(f, "%zu-%zu-%zu\n", TOT_ROWS, TOT_COLS, (size_t) (TIMESTEPS / save_period));
+	fprintf(f, "%zu-%zu-%zu-%u\n", TOT_ROWS, TOT_COLS, (size_t) (TIMESTEPS / save_period), framerate);
 
 	// Init arrays
 	double (*u_tmp)[TOT_COLS] = NULL;
 	double (*u0)[TOT_COLS] = malloc(TOT_ROWS * sizeof(double [TOT_COLS]));	// u(k)
 	double (*u1)[TOT_COLS] = malloc(TOT_ROWS * sizeof(double [TOT_COLS]));	// u(k-1)
 	double (*u2)[TOT_COLS] = malloc(TOT_ROWS * sizeof(double [TOT_COLS]));	// u(k-2)
+	
+
+	// Courant numbers
+	double Cx = c*(dt/dx);
+	double Cx_sq = Cx*Cx;
+	double Cy = c*(dt/dy);
+	double Cy_sq = Cy*Cy;
 	
 
 	// u2 initial conditions
@@ -55,8 +61,8 @@ int main() {
 	// u1 initial conditions
 	for (size_t j = 1; j < TOT_COLS - 1; j++) {
 		for (size_t i = 1; i < TOT_ROWS - 1; i++) {
-			u1[i][j] = u2[i][j]+((dt*dt*c_sq)/(4*dx*dx))*(u2[i-1][j]-2*u2[i][j]+u2[i+1][j])
-					   +((dt*dt*c_sq)/(4*dy*dy))*(u2[i][j-1]-2*u2[i][j]+u2[i][j+1]);
+			u1[i][j] = u2[i][j]+(0.25*Cx_sq)*(u2[i-1][j]-2*u2[i][j]+u2[i+1][j])
+					   +(0.25*Cy_sq)*(u2[i][j-1]-2*u2[i][j]+u2[i][j+1]);
 		}
 	}
 
@@ -68,8 +74,8 @@ int main() {
 		for (size_t j = 1; j < TOT_COLS - 1; j++) {
 			for (size_t i = 1; i < TOT_ROWS - 1; i++) {
 				u0[i][j] =   2*u1[i][j]-u2[i][j]
-					   + ((dt*dt*c_sq)/(2*dx*dx))*(u1[i-1][j]-2*u1[i][j]+u1[i+1][j])
-					   + ((dt*dt*c_sq)/(2*dy*dy))*(u1[i][j-1]-2*u1[i][j]+u1[i][j+1]);
+					   + (0.5*Cx_sq)*(u1[i-1][j]-2*u1[i][j]+u1[i+1][j])
+					   + (0.5*Cy_sq)*(u1[i][j-1]-2*u1[i][j]+u1[i][j+1]);
 			}
 		}
 

@@ -25,10 +25,8 @@ def main():
 
     info, sim_data = sim_data.split(b'\n', maxsplit=1)
     
-    rows, cols, steps = info.split(b'-')
-    rows, cols, steps = int(rows), int(cols), int(steps)
-
-    fps = 30
+    rows, cols, steps, fps = info.split(b'-')
+    rows, cols, steps, fps = int(rows), int(cols), int(steps), int(fps)
 
     sim_data = np.frombuffer(sim_data, np.float64).reshape((rows, cols, steps))
 

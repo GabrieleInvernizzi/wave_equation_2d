@@ -1,9 +1,9 @@
 CC := gcc
 
-ifeq ($(release),true)
-	CFLAGS := -O2
+ifeq ($(debug),true)
+	CFLAGS := -g -O0
 else
-	CFLAGS := -g -O2
+	CFLAGS := -O2
 endif
 
 BIN_PATH := bin
