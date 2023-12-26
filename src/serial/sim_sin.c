@@ -67,8 +67,8 @@ void sim_sin(SimConf c, FILE* f) {
 		for (size_t j = 0; j < c.tot_cols; j++) {
 			double y = j * c.dy;
 			double x = (c.tot_rows - 1) * c.dx;
-			u0[0][j] = sin(2*M_PI*(y+c.dt));
-			u0[c.tot_rows - 1][j] = sin(2*M_PI*(x+y+c.dt));
+			u0[0][j] = sin(2*M_PI*(y+t));
+			u0[c.tot_rows - 1][j] = sin(2*M_PI*(x+y+t));
 		}
 
 		for (size_t i = 0; i < c.tot_rows; i++) {
@@ -88,7 +88,7 @@ void sim_sin(SimConf c, FILE* f) {
 
 		// Save the frame
 		if (step % c.save_period == 0)
-			fwrite((void*)u1, c.tot_rows * c.tot_cols, sizeof(double), f);
+			fwrite((void*)u1, sizeof(double), c.tot_rows * c.tot_cols, f);
 	}
 
 	free(u2);

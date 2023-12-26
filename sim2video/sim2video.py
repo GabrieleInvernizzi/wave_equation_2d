@@ -29,9 +29,9 @@ def main():
     dt, rows, cols, steps, fps = int(dt), int(rows), int(cols), int(steps), int(fps)
     
     if dt == 8:
-        sim_data = np.frombuffer(sim_data_raw, np.float64).reshape((rows, cols, steps))
+        sim_data = np.frombuffer(sim_data_raw, np.float64).reshape((steps, rows, cols))
     elif dt == 4:
-        sim_data = np.frombuffer(sim_data_raw, np.float32).reshape((rows, cols, steps))
+        sim_data = np.frombuffer(sim_data_raw, np.float32).reshape((steps, rows, cols))
     else:
         print(f"Can't work with double of size = {dt}. Exiting.")
         sys.exit(3)
@@ -50,7 +50,7 @@ def main():
     print(f"Encoding \"{sim_name}\" to avi...")
     w = iio.get_writer(f'{sim_name}.avi', fps=fps)
     for i in range(steps):
-        im = iio.core.util.Array(sim_data[:,:,i])
+        im = iio.core.util.Array(sim_data[i,:,:])
         w.append_data(im)
     w.close()
           

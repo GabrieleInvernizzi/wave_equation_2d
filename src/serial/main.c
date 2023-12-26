@@ -10,8 +10,8 @@ SimConf get_sim_conf() {
 		.duration = 10,
 		.dt = 0.01,
 		.c = 1.0,
-		.domain_width = 10,
-		.domain_height = 10,
+		.domain_width = 5,
+		.domain_height = 5,
 		.dx = 0.01,
 		.dy = 0.01
 	};

@@ -54,3 +54,8 @@ dkms.conf
 
 # Editor config
 /.vscode
+
+# Simulation and video files
+*.sim
+*.mp4
+*.avi

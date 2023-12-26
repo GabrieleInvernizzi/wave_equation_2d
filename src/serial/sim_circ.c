@@ -66,8 +66,8 @@ void sim_circ(SimConf c, FILE* f) {
 
 
 		// Save the frame
-		if (step % c.save_period == 0)
-			fwrite((void*)u1, c.tot_rows * c.tot_cols, sizeof(double), f);
+		if (step % c.save_period == 0) 
+			fwrite((void*)u1, sizeof(double), c.tot_cols * c.tot_rows, f);
 	}
 
 	free(u2);
