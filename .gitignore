@@ -54,6 +54,7 @@ dkms.conf
 
 # Editor config
 /.vscode
+.clangd
 
 # Simulation and video files
 *.sim
