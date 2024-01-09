@@ -66,4 +66,4 @@ run_serial: $(TARGET_SERIAL)
 
 .PHONY: run_par
 run_par: $(TARGET_PAR)
-	@mpirun -n 4 ./$^
+	@mpirun -n 5 ./$^
