@@ -3,6 +3,7 @@ PCC := mpicc
 
 ifeq ($(debug),true)
 	CFLAGS := -g -O0
+	DEFS := -DDEBUG
 else
 	CFLAGS := -O2
 endif
@@ -36,16 +37,16 @@ default: makedir all
 
 # non-phony targets
 $(BIN_PATH)/$(TARGET_NAME_SERIAL): $(OBJ_SERIAL)
-	$(CC) $(CFLAGS_SERIAL) -o $@ $(OBJ_SERIAL) $(LIBS)
+	$(CC) $(CFLAGS_SERIAL) $(DEFS) -o $@ $(OBJ_SERIAL) $(LIBS)
 
 $(OBJ_PATH_SERIAL)/%.o: $(SRC_PATH_SERIAL)/%.c
-	$(CC) $(CFLAGS_SERIAL) -c -o $@ $<
+	$(CC) $(CFLAGS_SERIAL) $(DEFS) -c -o $@ $<
 
 $(BIN_PATH)/$(TARGET_NAME_PAR): $(OBJ_PAR)
-	$(PCC) $(CFLAGS_PAR) -o $@ $(OBJ_PAR) $(LIBS)
+	$(PCC) $(CFLAGS_PAR) $(DEFS) -o $@ $(OBJ_PAR) $(LIBS)
 
 $(OBJ_PATH_PAR)/%.o: $(SRC_PATH_PAR)/%.c
-	$(PCC) $(CFLAGS_PAR) -c -o $@ $<
+	$(PCC) $(CFLAGS_PAR) $(DEFS) -c -o $@ $<
 
 # phony rules
 .PHONY: makedir
