@@ -18,6 +18,7 @@ int master(int n_procs_world) {
     SimConf c = get_sim_conf();
     int n_workers = n_procs_world - 1;
     int dim = (int)sqrt(n_workers);
+    MPI_Status last_status;
 
     printf("M[]: started.\n");
     // Gather the coords
@@ -36,9 +37,14 @@ int master(int n_procs_world) {
     }
     int *recv_coords = recv_coords_with_master + 3;
 
+    const size_t w_cols = c.cols / dim;
+    const size_t w_rows = c.rows / dim;
+    const size_t w_tot_cols = w_cols + 2;
+    const size_t w_tot_rows = w_rows + 2;
+
     const size_t recv_buf_size =
-        (((c.cols + 2) * (c.rows + 2)) / dim) * sizeof(double);
-    double *recv_buf = malloc(recv_buf_size);
+        w_tot_cols * w_tot_rows * sizeof(double[w_tot_cols]);
+    double(*recv_buf)[w_tot_cols] = malloc(recv_buf_size);
 
     double(*frame)[c.tot_cols] =
         malloc(c.tot_rows * sizeof(double[c.tot_cols]));
@@ -53,18 +59,27 @@ int master(int n_procs_world) {
     fprintf(f, "%zu-%zu-%zu-%zu-%u\n", sizeof(double), c.tot_rows, c.tot_cols,
             (size_t)(c.n_steps / c.save_period), c.framerate);
 
-    size_t step = 0;
-    // for (size_t i = 0; i < c.n_steps; i++) {
-    // 	for (int w = 0; w < n_workers; w++) {
-    // 		MPI_Recv(
-    // 			recv_buf,
-    // 			2,
-    // 			MPI_INT,
-    // 			w,
-    //
-    // 		)
-    // 	}
-    // }
+    for (size_t s = 0; s < c.n_steps; s += c.save_period) {
+        printf("M[]: step: %zu / %zu.\n", s, c.n_steps);
+        for (int w = 0; w < n_workers; w++) {
+            int *w_info = recv_coords + w * 3;
+            // Recv from worker
+            MPI_Recv(recv_buf, recv_buf_size, MPI_DOUBLE, w_info[0],
+                     SEND_MASTER_TAG, MPI_COMM_WORLD, &last_status);
+            // Position it correctly
+            size_t i_base = w_info[1] == 0 ? 0 : (w_info[1] * w_tot_rows - 3);
+            size_t j_base = w_info[2] == 0 ? 0 : (w_info[2] * w_tot_cols - 3);
+            for (size_t j = 0; j < w_tot_cols; j++) {
+                for (size_t i = 0; i < w_tot_rows; i++) {
+                    frame[i_base + i][j_base + j] = recv_buf[i][j];
+                }
+            }
+        }
+        // Save frame to file
+        fwrite((void *)frame, sizeof(double), c.tot_cols * c.tot_rows, f);
+    }
+
+    printf("M[]: step: %zu / %zu.\n", c.n_steps, c.n_steps);
 
     fclose(f);
 
@@ -107,8 +122,8 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
     int wrap_around[N_DIMS] = {0};
     int reorder = 1;
 
-    int err = 0;
-    err = MPI_Cart_create(comm, N_DIMS, dims, wrap_around, reorder, &comm2d);
+    int err =
+        MPI_Cart_create(comm, N_DIMS, dims, wrap_around, reorder, &comm2d);
     if (err != 0)
         printf("W[%d]: Error creating the cart (%d).\n", my_rank, err);
 
@@ -117,7 +132,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
     int my_cart_rank;
     MPI_Cart_rank(comm2d, coord, &my_cart_rank);
 
-    printf("W[%d]: my_cart_rank WCT[%d], my coords = (%d,%d).\n", my_rank,
+    printf("W[%d]: my_cart_rank CT[%d], my coords = (%d,%d).\n", my_rank,
            my_cart_rank, coord[0], coord[1]);
 
     // Send to master my coords
@@ -137,14 +152,15 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
 
     // Request for async
     MPI_Request gh_cells_req[4] = {[0 ... 3] = MPI_REQUEST_NULL};
+    MPI_Request send_to_mastert_req = MPI_REQUEST_NULL;
     MPI_Status last_status;
 
     printf("W[%d, CT: %d]: CT created. Starting computations.\n", my_rank,
            my_cart_rank);
 
     // Sim
-    size_t cols = c.cols / 2;
-    size_t rows = c.rows / 2;
+    size_t cols = c.cols / dims[0];
+    size_t rows = c.rows / dims[1];
     size_t tot_cols = cols + 2;
     size_t tot_rows = rows + 2;
 
@@ -157,18 +173,18 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
         malloc(tot_rows * sizeof(double[tot_cols])); // u(k-2)
 
     // Init ghost cells
-    size_t tot_gh_cells = 2 * (tot_rows + tot_cols);
+    size_t tot_gh_cells = 2 * (rows + cols);
 
     double *send_buf = malloc(tot_gh_cells * sizeof(double));
-    double *send_buf_sides[4] = {send_buf, send_buf + tot_cols,
-                                 send_buf + tot_cols + tot_rows,
-                                 send_buf + 2 * tot_cols + tot_rows};
+    double *send_buf_sides[4] = {send_buf, send_buf + cols,
+                                 send_buf + cols + rows,
+                                 send_buf + 2 * cols + rows};
     double *recv_buf = malloc(tot_gh_cells * sizeof(double));
     // {top, left, down, right} as before
-    double *recv_buf_sides[4] = {recv_buf, recv_buf + tot_cols,
-                                 recv_buf + tot_cols + tot_rows,
-                                 recv_buf + 2 * tot_cols + tot_rows};
-    double gh_cells_counts[2] = {tot_cols, tot_rows};
+    double *recv_buf_sides[4] = {recv_buf, recv_buf + cols,
+                                 recv_buf + cols + rows,
+                                 recv_buf + 2 * cols + rows};
+    double gh_cells_counts[2] = {cols, rows};
 
     // Courant numbers
     double Cx = c.c * (c.dt / c.dx);
@@ -207,72 +223,59 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
 
         // Forcing term (only in the region where it is applied)
         if (coord[0] == 1 && coord[1] == 1) {
-            u0[0][0] += c.dt * c.dt * 200 * sin(2 * M_PI * 2 * t);
+            u0[1][1] += c.dt * c.dt * 200 * sin(2 * M_PI * 2 * t);
         }
 
-        // Send the ghost shells
-        for (size_t i = 0; i < 4; i++) {
-            if (neigh[i] != MPI_PROC_NULL) {
-                // Copy corresponding side in send_buf
-                double *send_buf_side = send_buf_sides[i];
-                double *recv_buf_side = recv_buf_sides[i];
-                for (size_t j = 0; j < gh_cells_counts[i % 2]; j++) {
-                    if ((i % 2) == 0) // top and bottom
-                        send_buf_side[j] = u1[i == 0 ? 0 : (tot_rows - 1)][j];
-                    else // left and right
-                        send_buf_side[j] = u1[j][i == 1 ? 0 : (tot_cols - 1)];
-                }
-                // Send the buf
-                MPI_Isend(send_buf_side, gh_cells_counts[i % 2], MPI_DOUBLE,
-                          neigh[i], GH_CELLS_TAG, comm2d, &gh_cells_req[i]);
-                // Wait and recv the corresponding side
-                MPI_Recv(recv_buf_side, gh_cells_counts[i % 2], MPI_DOUBLE,
-                         neigh[i], GH_CELLS_TAG, comm2d, &last_status);
-                // Copy back recved gh_cells
-                for (size_t j = 0; j < gh_cells_counts[i % 2]; j++) {
-                    if ((i % 2) == 0) // top and bottom
-                        u1[i == 0 ? 0 : (tot_rows - 1)][j] = recv_buf_side[j];
-                    else // left and right
-                        u1[j][i == 1 ? 0 : (tot_cols - 1)] = recv_buf_side[j];
-                }
-            }
-        }
-
-        // calc top and down out cells
+        // calc top and down boundary conds
         for (size_t s = 0; s < 4; s += 2) {
-            if (neigh[s] != MPI_PROC_NULL) { // There is a neighbor so we use
-                                             // it's ghost cells
-                size_t i = (s == 0 ? 1 : (tot_cols - 2));
-                for (size_t j = 1; j < tot_cols - 1; j++) {
-                    u0[i][j] = 2 * u1[i][j] - u2[i][j] +
-                               (0.5 * Cx_sq) * (u1[i][j - 1] - 2 * u1[i][j] +
-                                                u1[i][j + 1]) +
-                               (0.5 * Cy_sq) *
-                                   (u1[i - 1][j] - 2 * u1[i][j] + u1[i + 1][j]);
-                }
-            } else { // There is no neighbor so we enforce boundary conds
+            // There is no neighbor so we enforce boundary conds
+            if (neigh[s] == MPI_PROC_NULL) {
                 size_t i = (s == 0 ? 0 : (tot_cols - 1));
                 for (size_t j = 1; j < tot_cols - 1; j++)
                     u0[i][j] = (s == 0 ? u0[2][j] : u0[i - 2][j]);
             }
         }
 
-        // calc left and right out cells
+        // calc left and right boundary conds
         for (size_t s = 1; s < 4; s += 2) {
-            if (neigh[s] != MPI_PROC_NULL) { // There is a neighbor so we use
-                                             // it's ghost cells
-                size_t i = (s == 1 ? 1 : (tot_rows - 2));
-                for (size_t j = 1; j < tot_rows - 1; j++) {
-                    u0[i][j] = 2 * u1[i][j] - u2[i][j] +
-                               (0.5 * Cx_sq) * (u1[i][j - 1] - 2 * u1[i][j] +
-                                                u1[i][j + 1]) +
-                               (0.5 * Cy_sq) *
-                                   (u1[i - 1][j] - 2 * u1[i][j] + u1[i + 1][j]);
-                }
-            } else { // There is no neighbor so we enforce boundary conds
+            // There is no neighbor so we enforce boundary conds
+            if (neigh[s] == MPI_PROC_NULL) {
                 size_t i = (s == 1 ? 0 : (tot_rows - 1));
                 for (size_t j = 1; j < tot_rows - 1; j++)
                     u0[j][i] = (s == 0 ? u0[j][2] : u0[j][i - 2]);
+            }
+        }
+
+        // Send the ghost shells
+        for (size_t s = 0; s < 4; s++) {
+            if (neigh[s] != MPI_PROC_NULL) {
+                // Copy corresponding side in send_buf
+                double *send_buf_side = send_buf_sides[s];
+                double *recv_buf_side = recv_buf_sides[(s + 2) % 4];
+
+                // Copy the outer cells to send buf
+                for (size_t i = 1; i < gh_cells_counts[s % 2] + 1; i++) {
+                    if ((s % 2) == 0) // top and bottom
+                        send_buf_side[i] = u0[s == 0 ? 1 : (tot_rows - 2)][i];
+                    else // left and right
+                        send_buf_side[i] = u0[i][s == 1 ? 1 : (tot_cols - 2)];
+                }
+
+                // Send the buf
+                MPI_Wait(&gh_cells_req[s], &last_status);
+                MPI_Isend(send_buf_side, gh_cells_counts[s % 2], MPI_DOUBLE,
+                          neigh[s], GH_CELLS_TAG, comm2d, &gh_cells_req[s]);
+                // Wait and recv the corresponding side
+                MPI_Recv(recv_buf_side, gh_cells_counts[s % 2], MPI_DOUBLE,
+                         neigh[s], GH_CELLS_TAG, comm2d, &last_status);
+
+                // Copy back recved gh_cells
+                for (size_t i = 1; i < gh_cells_counts[s % 2] + 1; i++) {
+                    if ((s % 2) == 0) // top and bottom
+                        u0[s == 0 ? 0 : (tot_rows - 1)][i] = recv_buf_side[i];
+                    else // left and right
+                        u0[i][s == 1 ? 0 : (tot_cols - 1)] = recv_buf_side[i];
+                }
             }
         }
 
@@ -282,13 +285,17 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
         u1 = u0;
         u0 = u_tmp;
 
-        // Send frame(u1) to master
-        // if (step % c.save_period == 0)
-        // 	fwrite((void*)u1, sizeof(double), c.tot_cols * c.tot_rows, f);
+        // Send frame (u1) to master
+        if (step % c.save_period == 0) {
+            MPI_Wait(&send_to_mastert_req, &last_status);
+            MPI_Isend(u1, tot_rows * tot_cols, MPI_DOUBLE, master_rank,
+                      SEND_MASTER_TAG, MPI_COMM_WORLD, &send_to_mastert_req);
+        }
     }
 
     printf("W[%d, CT: %d]: finished.\n", my_rank, my_cart_rank);
     // To be sure that every communication has ended
+    MPI_Wait(&send_to_mastert_req, &last_status);
     MPI_Barrier(comm2d);
 
     free(u2);

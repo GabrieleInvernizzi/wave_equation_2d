@@ -2,7 +2,7 @@ CC := gcc
 PCC := mpicc
 
 ifeq ($(debug),true)
-	CFLAGS := -g -O0
+	CFLAGS := -g -O0 -fsanitize=address
 	DEFS := -DDEBUG
 else
 	CFLAGS := -O2
