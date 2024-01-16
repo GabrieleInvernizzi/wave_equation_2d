@@ -194,7 +194,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
 
     // Forcing origin 
     int f_coord = dims[0] / 2;
-    size_t f_offset = dims[0] == 0 ? 1 : (tot_rows / 2);
+    size_t f_offset = (dims[0] % 2 == 0) ? 1 : (tot_rows / 2);
 
     // Courant numbers
     double Cx = c.c * (c.dt / c.dx);
