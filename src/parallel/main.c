@@ -240,7 +240,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
         for (size_t s = 1; s < 4; s += 2) {
             // There is no neighbor so we enforce boundary conds
             if (neigh[s] == MPI_PROC_NULL) {
-                size_t i = (s == 1 ? 0 : (tot_rows - 1));
+                size_t i = (s == 1 ? (tot_rows - 1) : 0);
                 for (size_t j = 1; j < tot_rows - 1; j++)
                     u0[j][i] = (s == 0 ? u0[j][2] : u0[j][i - 2]);
             }
@@ -251,7 +251,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
             if (neigh[s] != MPI_PROC_NULL) {
                 // Copy corresponding side in send_buf
                 double *send_buf_side = send_buf_sides[s];
-                double *recv_buf_side = recv_buf_sides[(s + 2) % 4];
+                double *recv_buf_side = recv_buf_sides[s];
 
                 // Copy the outer cells to send buf
                 for (size_t i = 1; i < gh_cells_counts[s % 2] + 1; i++) {
