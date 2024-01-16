@@ -10,7 +10,7 @@
 #define N_DIMS (2)
 #define GH_CELLS_TAG (1)
 #define SEND_MASTER_TAG (2)
-#define WORKERS_COLOR (1)
+#define WORKER_COLOR (1)
 
 int master(int n_procs_world) {
     FILE *f = NULL;
@@ -24,7 +24,7 @@ int master(int n_procs_world) {
     // Gather the coords
     int *recv_coords_with_master = malloc(3 * n_procs_world * sizeof(int));
     {
-        int dummy_coords[3] = {[0 ... 2] = -1};
+        int dummy_coords[3] = {MASTER_RANK, -1, -1};
         MPI_Gather(&dummy_coords, 3, MPI_INT, recv_coords_with_master, 3,
                    MPI_INT, MASTER_RANK, MPI_COMM_WORLD);
         int j = 0;
@@ -101,11 +101,17 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
     MPI_Comm_size(comm, &n_procs);
     MPI_Comm_rank(comm, &my_rank);
 
-    if (n_procs != 4) {
-        if (my_rank == 0) {
-            printf("W[0]: worker processes must be 4 but are %d.", n_procs);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-            return 1;
+    // Check if the number of worker procs is a perfect square
+    {
+        int dim = (int)sqrt(n_procs);
+        if (n_procs != (dim * dim)) {
+            if (my_rank == 0) {
+                printf("W[0]: worker processes must be a perfect square but "
+                       "are %d.",
+                       n_procs);
+                MPI_Abort(MPI_COMM_WORLD, 1);
+                return 1;
+            }
         }
     }
 
@@ -186,6 +192,10 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
                                  recv_buf + 2 * cols + rows};
     double gh_cells_counts[2] = {cols, rows};
 
+    // Forcing origin 
+    int f_coord = dims[0] / 2;
+    size_t f_offset = dims[0] == 0 ? 1 : (tot_rows / 2);
+
     // Courant numbers
     double Cx = c.c * (c.dt / c.dx);
     double Cx_sq = Cx * Cx;
@@ -222,8 +232,8 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
         }
 
         // Forcing term (only in the region where it is applied)
-        if (coord[0] == 1 && coord[1] == 1) {
-            u0[1][1] += c.dt * c.dt * 200 * sin(2 * M_PI * 2 * t);
+        if (coord[0] == f_coord && coord[1] == f_coord) {
+            u0[f_offset][f_offset] += c.dt * c.dt * 200 * sin(2 * M_PI * 2 * t);
         }
 
         // calc top and down boundary conds
@@ -311,17 +321,18 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
 
 int main(int argc, char *argv[]) {
     int n_procs_world, my_rank_world;
-    int n_rows, n_cols;
-    n_rows = 2;
-    n_cols = n_rows;
+    int side_len;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &n_procs_world);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank_world);
 
-    if (n_procs_world != ((n_cols * n_rows) + 1)) {
+    side_len = (int)sqrt(n_procs_world - 1);
+
+    if ((n_procs_world - 1) != (side_len * side_len)) {
         if (my_rank_world == 0)
-            printf("M[]: the number of processors must be 5 but is %d.\n",
+            printf("M[]: the number of processors must be a perfect square + 1 "
+                   "but is %d.\n",
                    n_procs_world);
         MPI_Finalize();
         return 1;
@@ -331,7 +342,7 @@ int main(int argc, char *argv[]) {
     MPI_Comm worker_comm = MPI_COMM_NULL;
     MPI_Comm_split(
         MPI_COMM_WORLD,
-        (my_rank_world == MASTER_RANK ? MPI_UNDEFINED : WORKERS_COLOR),
+        (my_rank_world == MASTER_RANK ? MPI_UNDEFINED : WORKER_COLOR),
         my_rank_world, &worker_comm);
 
     int ret;
