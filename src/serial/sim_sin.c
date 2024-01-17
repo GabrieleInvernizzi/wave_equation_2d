@@ -2,13 +2,16 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
-#define BUFFER_SIZE 100
-#define DEBUG
+#define BUFFER_SIZE 15000
+
 #ifdef DEBUG
 	#define CHECK(x) if(x == NULL) {\
-		fprintf(stderr, "Errore nell'allocazione della memoria: %d\n", __LINE__);\
+		fprintf(stderr, "Error during memory allocation: %d\n", __LINE__);\
 	}
+#else
+	#define CHECK(x)
 #endif	
 
 void sim_sin(SimConf c, FILE* f) {
@@ -20,6 +23,9 @@ void sim_sin(SimConf c, FILE* f) {
 	CHECK(u1);
 	double (*u2)[c.tot_cols] = malloc(c.tot_rows * sizeof(double [c.tot_cols])); // u(k-2)
 	CHECK(u2);
+
+	double *buffer = malloc(BUFFER_SIZE * sizeof(double));
+	CHECK(buffer);
 
 
 	// Courant numbers
@@ -60,7 +66,6 @@ void sim_sin(SimConf c, FILE* f) {
 		u1[i][c.tot_cols - 1] = sin(2*M_PI*(x+y+c.dt));
 	}
 
-    double buffer[BUFFER_SIZE];
 	size_t buffIndex = 0;
 
 	double t = c.dt;
@@ -101,15 +106,11 @@ void sim_sin(SimConf c, FILE* f) {
 
 		// Save the frame
 		if (step % c.save_period == 0) {
-			for (size_t j = 0; j < c.tot_cols; j++) {
-				for (size_t i = 0; i < c.tot_rows; i++) {
-					buffer[buffIndex++] = (u1)[i][j];
-					// check for full buffer or last iteration
-					if (buffIndex == BUFFER_SIZE || step == c.n_steps-1) {
-						fwrite(buffer, sizeof(double), buffIndex, f);
-						buffIndex = 0; 
-					}
-				}
+			memcpy(buffer + buffIndex / sizeof(double), u1, sizeof(u1));
+			buffIndex += c.tot_cols * c.tot_rows;
+			if (buffIndex >= BUFFER_SIZE || step == c.n_steps-1) {
+				fwrite(buffer, sizeof(double), buffIndex - c.tot_cols * c.tot_rows, f);
+				buffIndex = 0;
 			}
 		}
 
@@ -119,4 +120,6 @@ void sim_sin(SimConf c, FILE* f) {
 	free(u2);
 	free(u1);
 	free(u0);
+	free(buffer);
+	
 }
