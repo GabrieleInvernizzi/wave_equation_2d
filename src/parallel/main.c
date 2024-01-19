@@ -42,8 +42,7 @@ int master(int n_procs_world) {
     const size_t w_tot_cols = w_cols + 2;
     const size_t w_tot_rows = w_rows + 2;
 
-    const size_t recv_buf_size =
-        w_tot_cols * w_tot_rows * sizeof(double[w_tot_cols]);
+    const size_t recv_buf_size = w_tot_rows * sizeof(double[w_tot_cols]);
     double(*recv_buf)[w_tot_cols] = malloc(recv_buf_size);
 
     double(*frame)[c.tot_cols] =
@@ -192,7 +191,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
                                  recv_buf + 2 * cols + rows};
     double gh_cells_counts[2] = {cols, rows};
 
-    // Forcing origin 
+    // Forcing origin
     int f_coord = dims[0] / 2;
     size_t f_offset = (dims[0] % 2 == 0) ? 1 : (tot_rows / 2);
 
@@ -205,8 +204,9 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
     // u1 and u2 initial conditions
     for (size_t j = 0; j < cols; j++) {
         for (size_t i = 0; i < rows; i++) {
-            u2[i][j] = 0.0;
-            u1[i][j] = 0.0;
+            u2[i][j] = my_cart_rank;
+            u1[i][j] = my_cart_rank;
+            u0[i][j] = my_cart_rank;
         }
     }
 
