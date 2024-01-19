@@ -1,8 +1,8 @@
 #include "master_worker.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 #include "sim_conf.h"
 
@@ -86,7 +86,8 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
 
     // Init arrays
     double(*u_tmp)[tot_cols] = NULL;
-    double(*u0)[tot_cols] = malloc(tot_rows * sizeof(double[tot_cols])); // u(k)
+    double(*u0)[tot_cols] = 
+        malloc(tot_rows * sizeof(double[tot_cols])); // u(k)
     double(*u1)[tot_cols] =
         malloc(tot_rows * sizeof(double[tot_cols])); // u(k-1)
     double(*u2)[tot_cols] =
@@ -157,7 +158,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
             if (neigh[s] == MPI_PROC_NULL) {
                 size_t i = (s == 0 ? 0 : (tot_cols - 1));
                 for (size_t j = 1; j < tot_cols - 1; j++)
-                    u0[i][j] = (s == 0 ? u0[2][j] : u0[i - 2][j]);
+                    u0[i][j] = (s == 0 ? u0[2][j] : u0[i - 1][j]);
             }
         }
 
@@ -165,9 +166,9 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
         for (size_t s = 1; s < 4; s += 2) {
             // There is no neighbor so we enforce boundary conds
             if (neigh[s] == MPI_PROC_NULL) {
-                size_t i = (s == 1 ? (tot_rows - 1) : 0);
+                size_t i = (s == 1 ? 0 : (tot_rows - 1));
                 for (size_t j = 1; j < tot_rows - 1; j++)
-                    u0[j][i] = (s == 0 ? u0[j][2] : u0[j][i - 2]);
+                    u0[j][i] = (s == 1 ? u0[j][2] : u0[j][i - 1]);
             }
         }
 
