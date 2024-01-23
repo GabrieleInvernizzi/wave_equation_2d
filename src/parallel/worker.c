@@ -1,3 +1,4 @@
+#include "arena_alloc.h"
 #include "master_worker.h"
 
 #include <math.h>
@@ -85,22 +86,30 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
     size_t tot_cols = cols + 2;
     size_t tot_rows = rows + 2;
 
+    // Init arena
+    const size_t tot_gh_cells = 2 * (rows + cols);
+    const size_t arena_size =
+        3 * tot_rows *sizeof(double[tot_cols]) +  2 * tot_gh_cells * sizeof(double);
+
+    Arena arena;
+    if (arena_init(&arena, arena_size) != 0)
+        LOGF("W[%d, CT: %d]: Error allocating %zu B of memory.", my_rank,
+             my_cart_rank, arena_size);
+
     // Init arrays
     double(*u_tmp)[tot_cols] = NULL;
-    double(*u0)[tot_cols] = malloc(tot_rows * sizeof(double[tot_cols])); // u(k)
+    double(*u0)[tot_cols] = arena_alloc(&arena, tot_rows * sizeof(double[tot_cols])); // u(k)
     double(*u1)[tot_cols] =
-        malloc(tot_rows * sizeof(double[tot_cols])); // u(k-1)
+        arena_alloc(&arena, tot_rows * sizeof(double[tot_cols])); // u(k-1)
     double(*u2)[tot_cols] =
-        malloc(tot_rows * sizeof(double[tot_cols])); // u(k-2)
+        arena_alloc(&arena, tot_rows * sizeof(double[tot_cols])); // u(k-2)
 
     // Init ghost cells
-    size_t tot_gh_cells = 2 * (rows + cols);
-
-    double *send_buf = malloc(tot_gh_cells * sizeof(double));
+    double *send_buf = arena_alloc(&arena, tot_gh_cells * sizeof(double));
     double *send_buf_sides[4] = {send_buf, send_buf + cols,
                                  send_buf + cols + rows,
                                  send_buf + 2 * cols + rows};
-    double *recv_buf = malloc(tot_gh_cells * sizeof(double));
+    double *recv_buf = arena_alloc(&arena, tot_gh_cells * sizeof(double));
     // {top, left, down, right} as before
     double *recv_buf_sides[4] = {recv_buf, recv_buf + cols,
                                  recv_buf + cols + rows,
@@ -224,11 +233,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
     MPI_Wait(&send_to_mastert_req, &last_status);
     MPI_Barrier(comm2d);
 
-    free(u2);
-    free(u1);
-    free(u0);
-    free(send_buf);
-    free(recv_buf);
+    area_deinit(&arena);
 
     MPI_Comm_free(&comm2d);
 
