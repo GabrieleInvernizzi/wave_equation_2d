@@ -5,7 +5,7 @@ ifeq ($(debug),true)
 	CFLAGS := -g -O0
 	DEFS := -DDEBUG
 else
-	CFLAGS := -O2
+	CFLAGS := -O3 -march=native -flto
 endif
 
 ifeq ($(nolog),true)
