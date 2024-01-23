@@ -2,10 +2,14 @@ CC := gcc
 PCC := mpicc
 
 ifeq ($(debug),true)
-	CFLAGS := -g -O0 -fsanitize=address
+	CFLAGS := -g -O0
 	DEFS := -DDEBUG
 else
 	CFLAGS := -O2
+endif
+
+ifeq ($(nolog),true)
+	DEFS += -DNOLOG
 endif
 
 BIN_PATH := bin

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "log.h"
 #include "sim_conf.h"
 
 int master(int n_procs_world) {
@@ -14,7 +15,7 @@ int master(int n_procs_world) {
     int dim = (int)sqrt(n_workers);
     MPI_Status last_status;
 
-    printf("M[]: started.\n");
+    LOGF("M[]: started.");
     // Gather the coords
     int *recv_coords_with_master = malloc(3 * n_procs_world * sizeof(int));
     {
@@ -23,7 +24,7 @@ int master(int n_procs_world) {
                    MPI_INT, MASTER_RANK, MPI_COMM_WORLD);
         int j = 0;
         for (int i = 0; i < n_procs_world; i++) {
-            printf("M[]: W[%d, world: %d] coords are: [%d, %d].\n", i,
+            LOGF("M[]: W[%d, world: %d] coords are: [%d, %d].", i,
                    recv_coords_with_master[j], recv_coords_with_master[j + 1],
                    recv_coords_with_master[j + 2]);
             j += 3;
@@ -44,7 +45,7 @@ int master(int n_procs_world) {
 
     f = fopen(c.filepath, "wb");
     if (f == NULL) {
-        printf("Could not open the file \"%s\".", c.filepath);
+        LOGF("Could not open the file \"%s\".", c.filepath);
         MPI_Abort(MPI_COMM_WORLD, 1);
         return 1;
     }
@@ -53,7 +54,7 @@ int master(int n_procs_world) {
             (size_t)(c.n_steps / c.save_period), c.framerate);
 
     for (size_t s = 0; s < c.n_steps; s += c.save_period) {
-        printf("M[]: step: %zu / %zu.\n", s, c.n_steps);
+        LOGF("M[]: step: %zu / %zu.", s, c.n_steps);
         for (int w = 0; w < n_workers; w++) {
             int *w_info = recv_coords + w * 3;
             // Recv from worker
@@ -72,7 +73,7 @@ int master(int n_procs_world) {
         fwrite((void *)frame, sizeof(double), c.tot_cols * c.tot_rows, f);
     }
 
-    printf("M[]: step: %zu / %zu.\n", c.n_steps, c.n_steps);
+    LOGF("M[]: step: %zu / %zu.", c.n_steps, c.n_steps);
 
     fclose(f);
 
@@ -80,7 +81,7 @@ int master(int n_procs_world) {
     free(recv_buf);
     free(frame);
 
-    printf("M[]: finished.\n");
+    LOGF("M[]: finished.");
 
     return 0;
 }

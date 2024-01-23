@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "log.h"
 #include "sim_conf.h"
 
 int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
@@ -20,22 +21,22 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
         int dim = (int)sqrt(n_procs);
         if (n_procs != (dim * dim)) {
             if (my_rank == 0) {
-                printf("W[0]: worker processes must be a perfect square but "
-                       "are %d.",
-                       n_procs);
+                LOGF("W[0]: worker processes must be a perfect square but "
+                     "are %d.",
+                     n_procs);
                 MPI_Abort(MPI_COMM_WORLD, 1);
                 return 1;
             }
         }
     }
 
-    printf("W[%d]: started.\n", my_rank);
+    LOGF("W[%d]: started.", my_rank);
 
     // Create cartesian topology
     int dims[N_DIMS] = {0};
     MPI_Dims_create(n_procs, N_DIMS, dims);
     if (my_rank == 0)
-        printf("W[0]: worker grid = [%d, %d].\n", dims[0], dims[1]);
+        LOGF("W[0]: worker grid = [%d, %d].", dims[0], dims[1]);
 
     // Create cartesian mapping
     MPI_Comm comm2d;
@@ -45,15 +46,15 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
     int err =
         MPI_Cart_create(comm, N_DIMS, dims, wrap_around, reorder, &comm2d);
     if (err != 0)
-        printf("W[%d]: Error creating the cart (%d).\n", my_rank, err);
+        LOGF("W[%d]: Error creating the cart (%d).", my_rank, err);
 
     int coord[N_DIMS];
     MPI_Cart_coords(comm2d, my_rank, N_DIMS, coord);
     int my_cart_rank;
     MPI_Cart_rank(comm2d, coord, &my_cart_rank);
 
-    printf("W[%d]: my_cart_rank CT[%d], my coords = (%d,%d).\n", my_rank,
-           my_cart_rank, coord[0], coord[1]);
+    LOGF("W[%d]: my_cart_rank CT[%d], my coords = (%d,%d).", my_rank,
+         my_cart_rank, coord[0], coord[1]);
 
     // Send to master my coords
     {
@@ -67,16 +68,16 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
     // Get index of neighbors
     MPI_Cart_shift(comm2d, 0, 1, &neigh[0], &neigh[2]);
     MPI_Cart_shift(comm2d, 1, 1, &neigh[1], &neigh[3]);
-    printf("W[%d, CT: %d] - neighs: [%d, %d, %d, %d].\n", my_rank, my_cart_rank,
-           neigh[0], neigh[1], neigh[2], neigh[3]);
+    LOGF("W[%d, CT: %d] - neighs: [%d, %d, %d, %d].", my_rank, my_cart_rank,
+         neigh[0], neigh[1], neigh[2], neigh[3]);
 
     // Request for async
     MPI_Request gh_cells_req[4] = {[0 ... 3] = MPI_REQUEST_NULL};
     MPI_Request send_to_mastert_req = MPI_REQUEST_NULL;
     MPI_Status last_status;
 
-    printf("W[%d, CT: %d]: CT created. Starting computations.\n", my_rank,
-           my_cart_rank);
+    LOGF("W[%d, CT: %d]: CT created. Starting computations.", my_rank,
+         my_cart_rank);
 
     // Sim
     size_t cols = c.cols / dims[0];
@@ -86,8 +87,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
 
     // Init arrays
     double(*u_tmp)[tot_cols] = NULL;
-    double(*u0)[tot_cols] = 
-        malloc(tot_rows * sizeof(double[tot_cols])); // u(k)
+    double(*u0)[tot_cols] = malloc(tot_rows * sizeof(double[tot_cols])); // u(k)
     double(*u1)[tot_cols] =
         malloc(tot_rows * sizeof(double[tot_cols])); // u(k-1)
     double(*u2)[tot_cols] =
@@ -158,7 +158,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
             if (neigh[s] == MPI_PROC_NULL) {
                 size_t i = (s == 0 ? 0 : (tot_cols - 1));
                 for (size_t j = 1; j < tot_cols - 1; j++)
-                    u0[i][j] = (s == 0 ? u0[2][j] : u0[i - 1][j]);
+                    u0[i][j] = (s == 0 ? u0[2][j] : u0[i - 2][j]);
             }
         }
 
@@ -168,7 +168,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
             if (neigh[s] == MPI_PROC_NULL) {
                 size_t i = (s == 1 ? 0 : (tot_rows - 1));
                 for (size_t j = 1; j < tot_rows - 1; j++)
-                    u0[j][i] = (s == 1 ? u0[j][2] : u0[j][i - 1]);
+                    u0[j][i] = (s == 1 ? u0[j][2] : u0[j][i - 2]);
             }
         }
 
@@ -219,7 +219,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
         }
     }
 
-    printf("W[%d, CT: %d]: finished.\n", my_rank, my_cart_rank);
+    LOGF("W[%d, CT: %d]: finished.", my_rank, my_cart_rank);
     // To be sure that every communication has ended
     MPI_Wait(&send_to_mastert_req, &last_status);
     MPI_Barrier(comm2d);

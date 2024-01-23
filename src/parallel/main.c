@@ -1,8 +1,8 @@
 #include <math.h>
-#include <stdio.h>
 
 #include <mpi.h>
 
+#include "log.h"
 #include "master_worker.h"
 
 int main(int argc, char *argv[]) {
@@ -17,8 +17,8 @@ int main(int argc, char *argv[]) {
 
     if ((n_procs_world - 1) != (side_len * side_len)) {
         if (my_rank_world == 0)
-            printf("M[]: the number of processors must be a perfect square + 1 "
-                   "but is %d.\n",
+            LOGF("M[]: the number of processors must be a perfect square + 1 "
+                   "but is %d.",
                    n_procs_world);
         MPI_Finalize();
         return 1;
