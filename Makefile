@@ -12,6 +12,11 @@ ifeq ($(nolog),true)
 	DEFS += -DNOLOG
 endif
 
+ifeq ($(profile),true)
+	CFLAGS += -g -fno-omit-frame-pointer
+endif
+
+
 BIN_PATH := bin
 OBJ_PATH_BASE := bin/objs
 OBJ_PATH_SERIAL := $(OBJ_PATH_BASE)/serial
