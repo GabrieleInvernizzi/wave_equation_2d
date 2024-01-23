@@ -33,8 +33,8 @@ OBJ_SERIAL := $(patsubst %.c,%.o,$(SRC_SERIAL:$(SRC_PATH_SERIAL)/%=$(OBJ_PATH_SE
 SRC_PAR := $(call rwildcard,$(SRC_PATH_PAR),*.c)
 OBJ_PAR := $(patsubst %.c,%.o,$(SRC_PAR:$(SRC_PATH_PAR)/%=$(OBJ_PATH_PAR)/%))
 
-CFLAGS_SERIAL = $(CFLAGS) $(foreach d,$(dir $(SRC_SERIAL)), -I$d)
-CFLAGS_PAR = $(CFLAGS) $(foreach d,$(dir $(SRC_PAR)), -I$d)
+CFLAGS_SERIAL = $(CFLAGS) $(sort $(foreach d,$(dir $(SRC_SERIAL)), -I$d))
+CFLAGS_PAR = $(CFLAGS) $(sort $(foreach d,$(dir $(SRC_PAR)), -I$d))
 
 
 default: makedir all
