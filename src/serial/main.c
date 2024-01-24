@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-#include "sims.h"
+#include "log.h"
+#include "sim.h"
 
 SimConf get_sim_conf() {
     SimConf c = {.filepath = "out.sim",
@@ -28,14 +29,14 @@ int main() {
     // Create the file to save all the frames
     FILE *f = fopen(c.filepath, "wb");
     if (!f) {
-        printf("Can't create the file \"%s\". Exiting.\n", c.filepath);
+        LOGF("Can't create the file \"%s\". Exiting.", c.filepath);
         return 1;
     }
 
     fprintf(f, "%zu-%zu-%zu-%zu-%u\n", sizeof(double), c.tot_rows, c.tot_cols,
             (size_t)(c.n_steps / c.save_period), c.framerate);
 
-    sim_circ(c, f);
+    sim(c, f);
 
     fclose(f);
 

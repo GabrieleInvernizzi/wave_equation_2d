@@ -23,5 +23,4 @@ typedef struct {
     size_t tot_rows;
 } SimConf;
 
-void sim_sin(SimConf c, FILE *f);
-void sim_circ(SimConf c, FILE *f);
+void sim(SimConf c, FILE *f);

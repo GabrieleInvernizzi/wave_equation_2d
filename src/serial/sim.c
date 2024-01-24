@@ -1,7 +1,9 @@
-#include "sims.h"
+#include "sim.h"
 
 #include <math.h>
 #include <stdlib.h>
+
+#include "log.h"
 
 #define BUFFER_SIZE 100
 
@@ -14,7 +16,7 @@
 #define CHECK(x)
 #endif
 
-void sim_circ(SimConf c, FILE *f) {
+void sim(SimConf c, FILE *f) {
     // Init arrays
     double(*u_tmp)[c.tot_cols] = NULL;
     double(*u0)[c.tot_cols] =
@@ -32,6 +34,8 @@ void sim_circ(SimConf c, FILE *f) {
     double Cx_sq = Cx * Cx;
     double Cy = c.c * (c.dt / c.dy);
     double Cy_sq = Cy * Cy;
+
+    LOGF("Starting simulation.\nstep: 0 / %zu.", c.n_steps);
 
     // u2 initial conditions
     for (size_t j = 0; j < c.tot_cols; j++)
@@ -83,6 +87,7 @@ void sim_circ(SimConf c, FILE *f) {
 
         // Save the frame
         if (step % c.save_period == 0) {
+            LOGF("step: %zu / %zu.", step, c.n_steps);
             for (size_t j = 0; j < c.tot_cols; j++) {
                 for (size_t i = 0; i < c.tot_rows; i++) {
                     buffer[buffIndex++] = (u1)[i][j];
@@ -95,6 +100,8 @@ void sim_circ(SimConf c, FILE *f) {
             }
         }
     }
+
+    LOGF("step: %zu / %zu.\nFinished.", c.n_steps, c.n_steps);
 
     free(u2);
     free(u1);
