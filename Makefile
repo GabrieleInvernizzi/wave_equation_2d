@@ -13,7 +13,11 @@ ifeq ($(nolog),true)
 endif
 
 ifeq ($(profile),true)
-	CFLAGS += -g -fno-omit-frame-pointer
+	CFLAGS += -gdwarf -fno-omit-frame-pointer
+endif
+
+ifeq ($(profile_perf_event),true)
+	DEFS += -DPERF_PROFILE
 endif
 
 
