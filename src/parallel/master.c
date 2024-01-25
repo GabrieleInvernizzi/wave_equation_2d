@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 
 #include "log.h"
 #include "sim_conf.h"
@@ -18,6 +19,7 @@ int master(int n_procs_world) {
     LOGF("M[]: started.");
     // Gather the coords
     int *recv_coords_with_master = malloc(3 * n_procs_world * sizeof(int));
+    assert(recv_coords_with_master);
     {
         int dummy_coords[3] = {MASTER_RANK, -1, -1};
         MPI_Gather(&dummy_coords, 3, MPI_INT, recv_coords_with_master, 3,
@@ -39,9 +41,11 @@ int master(int n_procs_world) {
 
     const size_t recv_buf_size = w_tot_rows * sizeof(double[w_tot_cols]);
     double(*recv_buf)[w_tot_cols] = malloc(recv_buf_size);
+    assert(recv_buf);
 
     double(*frame)[c.tot_cols] =
         malloc(c.tot_rows * sizeof(double[c.tot_cols]));
+    assert(frame);
 
     f = fopen(c.filepath, "wb");
     if (f == NULL) {

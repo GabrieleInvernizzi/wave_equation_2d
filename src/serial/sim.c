@@ -1,5 +1,6 @@
 #include "sim.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 
@@ -8,14 +9,6 @@
 
 #define BUFFER_SIZE 100
 
-#ifdef DEBUG
-#define CHECK(x)                                                               \
-    if (x == NULL) {                                                           \
-        fprintf(stderr, "Error during memory allocation: %d\n", __LINE__);     \
-    }
-#else
-#define CHECK(x)
-#endif
 
 void sim(SimConf c, FILE *f) {
     // Init arrays
@@ -27,13 +20,13 @@ void sim(SimConf c, FILE *f) {
     double(*u_tmp)[c.tot_cols] = NULL;
     double(*u0)[c.tot_cols] =
         arena_alloc(&arena, arr_size); // u(k)
-    CHECK(u0);
+    assert(u0);
     double(*u1)[c.tot_cols] =
         arena_alloc(&arena, arr_size); // u(k-1)
-    CHECK(u1);
+    assert(u1);
     double(*u2)[c.tot_cols] =
         arena_alloc(&arena, arr_size); // u(k-2)
-    CHECK(u2);
+    assert(u2);
 
     // Courant numbers
     double Cx = c.c * (c.dt / c.dx);

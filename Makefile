@@ -3,9 +3,9 @@ PCC := mpicc
 
 ifeq ($(debug),true)
 	CFLAGS := -g -O0
-	DEFS := -DDEBUG
 else
 	CFLAGS := -O3 -march=native -flto
+	DEFS := -DNDEBUG
 endif
 
 ifeq ($(nolog),true)
