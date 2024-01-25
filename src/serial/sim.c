@@ -30,15 +30,14 @@ void sim(SimConf c, FILE *f) {
 
     LOGF("Starting simulation.\nstep: 0 / %zu.", c.n_steps);
 
-    // u2 initial conditions
-    for (size_t j = 0; j < c.tot_cols; j++)
-        for (size_t i = 0; i < c.tot_rows; i++)
+    // set initial conditions
+    for (size_t j = 0; j < c.tot_cols; j++) {
+        for (size_t i = 0; i < c.tot_rows; i++) {
             u2[i][j] = 0.0;
-
-    // u1 initial conditions
-    for (size_t j = 1; j < c.tot_cols; j++)
-        for (size_t i = 1; i < c.tot_rows; i++)
             u1[i][j] = 0.0;
+            u0[i][j] = 0.0;
+        }
+    }
 
     double t = c.dt;
     for (size_t step = 0; step < c.n_steps; step++) {
@@ -55,7 +54,7 @@ void sim(SimConf c, FILE *f) {
         }
 
         // Forcing term
-        u0[(size_t)(c.tot_rows / 1.2)][(size_t)(c.tot_cols / 1.2)] +=
+        u0[(size_t)(c.tot_rows / 2)][(size_t)(c.tot_cols / 2)] +=
             c.dt * c.dt * 200 * sin(2 * M_PI * 2 * t);
 
         // Reflective boundary
@@ -78,7 +77,7 @@ void sim(SimConf c, FILE *f) {
         // Save the frame
         if (step % c.save_period == 0) {
             LOGF("step: %zu / %zu.", step, c.n_steps);
-            fwrite(buffer, sizeof(double), buffIndex, f);
+            fwrite((void *)u1, sizeof(double), c.tot_rows * c.tot_cols, f);
         }
     }
 
