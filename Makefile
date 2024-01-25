@@ -16,10 +16,6 @@ ifeq ($(profile),true)
 	CFLAGS += -gdwarf -fno-omit-frame-pointer
 endif
 
-ifeq ($(profile_perf_event),true)
-	DEFS += -DPERF_PROFILE
-endif
-
 
 BIN_PATH := bin
 OBJ_PATH_BASE := bin/objs

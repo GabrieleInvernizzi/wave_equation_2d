@@ -4,11 +4,8 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "log.h"
 #include "arena_alloc.h"
-
-#define BUFFER_SIZE 100
-
+#include "log.h"
 
 void sim(SimConf c, FILE *f) {
     // Init arrays
@@ -18,14 +15,11 @@ void sim(SimConf c, FILE *f) {
     arena_init(&arena, arena_size);
 
     double(*u_tmp)[c.tot_cols] = NULL;
-    double(*u0)[c.tot_cols] =
-        arena_alloc(&arena, arr_size); // u(k)
+    double(*u0)[c.tot_cols] = arena_alloc(&arena, arr_size); // u(k)
     assert(u0);
-    double(*u1)[c.tot_cols] =
-        arena_alloc(&arena, arr_size); // u(k-1)
+    double(*u1)[c.tot_cols] = arena_alloc(&arena, arr_size); // u(k-1)
     assert(u1);
-    double(*u2)[c.tot_cols] =
-        arena_alloc(&arena, arr_size); // u(k-2)
+    double(*u2)[c.tot_cols] = arena_alloc(&arena, arr_size); // u(k-2)
     assert(u2);
 
     // Courant numbers
@@ -45,9 +39,6 @@ void sim(SimConf c, FILE *f) {
     for (size_t j = 1; j < c.tot_cols; j++)
         for (size_t i = 1; i < c.tot_rows; i++)
             u1[i][j] = 0.0;
-
-    double buffer[BUFFER_SIZE];
-    size_t buffIndex = 0;
 
     double t = c.dt;
     for (size_t step = 0; step < c.n_steps; step++) {
@@ -87,16 +78,7 @@ void sim(SimConf c, FILE *f) {
         // Save the frame
         if (step % c.save_period == 0) {
             LOGF("step: %zu / %zu.", step, c.n_steps);
-            for (size_t j = 0; j < c.tot_cols; j++) {
-                for (size_t i = 0; i < c.tot_rows; i++) {
-                    buffer[buffIndex++] = (u1)[i][j];
-                    // check for full buffer or last iteration
-                    if (buffIndex == BUFFER_SIZE || step == c.n_steps - 1) {
-                        fwrite(buffer, sizeof(double), buffIndex, f);
-                        buffIndex = 0;
-                    }
-                }
-            }
+            fwrite(buffer, sizeof(double), buffIndex, f);
         }
     }
 
