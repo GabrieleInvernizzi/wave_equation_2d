@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "log.h"
+#include "arena_alloc.h"
 
 #define BUFFER_SIZE 100
 
@@ -18,15 +19,20 @@
 
 void sim(SimConf c, FILE *f) {
     // Init arrays
+    const size_t arr_size = c.tot_rows * sizeof(double[c.tot_cols]);
+    const size_t arena_size = 3 * arr_size;
+    Arena arena;
+    arena_init(&arena, arena_size);
+
     double(*u_tmp)[c.tot_cols] = NULL;
     double(*u0)[c.tot_cols] =
-        malloc(c.tot_rows * sizeof(double[c.tot_cols])); // u(k)
+        arena_alloc(&arena, arr_size); // u(k)
     CHECK(u0);
     double(*u1)[c.tot_cols] =
-        malloc(c.tot_rows * sizeof(double[c.tot_cols])); // u(k-1)
+        arena_alloc(&arena, arr_size); // u(k-1)
     CHECK(u1);
     double(*u2)[c.tot_cols] =
-        malloc(c.tot_rows * sizeof(double[c.tot_cols])); // u(k-2)
+        arena_alloc(&arena, arr_size); // u(k-2)
     CHECK(u2);
 
     // Courant numbers
@@ -103,7 +109,5 @@ void sim(SimConf c, FILE *f) {
 
     LOGF("step: %zu / %zu.\nFinished.", c.n_steps, c.n_steps);
 
-    free(u2);
-    free(u1);
-    free(u0);
+    area_deinit(&arena);
 }
