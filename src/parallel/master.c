@@ -65,8 +65,8 @@ int master(int n_procs_world) {
             MPI_Recv(recv_buf, recv_buf_size, MPI_DOUBLE, w_info[0],
                      SEND_MASTER_TAG, MPI_COMM_WORLD, &last_status);
             // Position it correctly
-            size_t i_base = w_info[1] == 0 ? 0 : (w_info[1] * w_tot_rows - 2);
-            size_t j_base = w_info[2] == 0 ? 0 : (w_info[2] * w_tot_cols - 2);
+            size_t i_base = w_info[1] == 0 ? 0 : (w_info[1] * w_tot_rows - 3);
+            size_t j_base = w_info[2] == 0 ? 0 : (w_info[2] * w_tot_cols - 3);
             for (size_t j = 0; j < w_tot_cols; j++) {
                 for (size_t i = 0; i < w_tot_rows; i++) {
                     frame[i_base + i][j_base + j] = recv_buf[i][j];

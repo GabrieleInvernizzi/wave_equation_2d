@@ -222,7 +222,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
                 double *recv_buf_side = recv_buf_sides[s];
 
                 // Copy the outer cells to send buf
-                for (size_t i = 1; i < gh_cells_counts[s % 2] + 1; i++) {
+                for (size_t i = 0; i < gh_cells_counts[s % 2]; i++) {
                     if ((s % 2) == 0) // top and bottom
                         send_buf_side[i] = u0[s == 0 ? 1 : (tot_rows - 2)][i];
                     else // left and right
@@ -238,7 +238,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
                          neighs[s], GH_CELLS_TAG, comm2d, &last_status);
 
                 // Copy back recved gh_cells
-                for (size_t i = 1; i < gh_cells_counts[s % 2] + 1; i++) {
+                for (size_t i = 0; i < gh_cells_counts[s % 2]; i++) {
                     if ((s % 2) == 0) // top and bottom
                         u0[s == 0 ? 0 : (tot_rows - 1)][i] = recv_buf_side[i];
                     else // left and right
