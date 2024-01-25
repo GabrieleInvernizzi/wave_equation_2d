@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "log.h"
 #include "sim_conf.h"
@@ -168,6 +169,9 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
         arena_alloc(&arena, tot_rows * sizeof(double[tot_cols])); // u(k-1)
     double(*u2)[tot_cols] =
         arena_alloc(&arena, tot_rows * sizeof(double[tot_cols])); // u(k-2)
+    assert(u0);
+    assert(u1);
+    assert(u2);
 
     // Init ghost cells
     double *send_buf = arena_alloc(&arena, tot_gh_cells * sizeof(double));
@@ -175,6 +179,9 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
                                  send_buf + cols + rows,
                                  send_buf + 2 * cols + rows};
     double *recv_buf = arena_alloc(&arena, tot_gh_cells * sizeof(double));
+    assert(send_buf);
+    assert(recv_buf);
+
     // {top, left, down, right} as before
     double *recv_buf_sides[4] = {recv_buf, recv_buf + cols,
                                  recv_buf + cols + rows,
