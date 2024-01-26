@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "timings.h"
 #include "log.h"
 #include "sim_conf.h"
 
@@ -78,6 +79,8 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
 
     SimConf c = get_sim_conf();
 
+    START_TIMER("w init mpi", my_rank_world);
+
     MPI_Comm_size(comm, &n_procs);
     MPI_Comm_rank(comm, &my_rank);
 
@@ -145,6 +148,9 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
     LOGF("W[%d, CT: %d]: CT created. Starting computations.", my_rank,
          my_cart_rank);
 
+    END_TIMER;
+
+    START_TIMER("w init sim", my_rank_world);
     // Sim
     size_t cols = c.cols / dims[0];
     size_t rows = c.rows / dims[1];
@@ -205,15 +211,20 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
 
     set_init_conds(tot_rows, tot_cols, u0, u1, u2);
 
+    END_TIMER;
+
     double t = c.dt;
     for (size_t step = 0; step < c.n_steps; step++) {
         t += c.dt;
 
+        START_TIMER("w calc", my_rank_world);
         calc_u0_inner_cells(tot_rows, tot_cols, u0, u1, u2, Cx_sq, Cy_sq);
         calc_forcing(tot_rows, tot_cols, u0, coords, f_coord, f_offset, c.dt,
                      t);
         calc_boundary_conds(tot_rows, tot_cols, u0, neighs);
+        END_TIMER;
 
+        START_TIMER("w comm", my_rank_world);
         // Send the ghost shells
         for (size_t s = 0; s < 4; s++) {
             if (neighs[s] != MPI_PROC_NULL) {
@@ -246,6 +257,7 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
                 }
             }
         }
+        END_TIMER;
 
         // move the queue
         u_tmp = u2;
@@ -253,12 +265,14 @@ int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
         u1 = u0;
         u0 = u_tmp;
 
+        START_TIMER("w send m", my_rank_world);
         // Send frame (u1) to master
         if (step % c.save_period == 0) {
             MPI_Wait(&send_to_mastert_req, &last_status);
             MPI_Isend(u1, tot_rows * tot_cols, MPI_DOUBLE, master_rank,
                       SEND_MASTER_TAG, MPI_COMM_WORLD, &send_to_mastert_req);
         }
+        END_TIMER;
     }
 
     LOGF("W[%d, CT: %d]: finished.", my_rank, my_cart_rank);

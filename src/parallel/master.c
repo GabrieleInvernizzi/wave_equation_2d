@@ -5,6 +5,7 @@
 #include <math.h>
 #include <assert.h>
 
+#include "timings.h"
 #include "log.h"
 #include "sim_conf.h"
 
@@ -12,6 +13,9 @@ int master(int n_procs_world) {
     FILE *f = NULL;
 
     SimConf c = get_sim_conf();
+
+    START_TIMER("m init", MASTER_RANK);
+
     int n_workers = n_procs_world - 1;
     int dim = (int)sqrt(n_workers);
     MPI_Status last_status;
@@ -57,7 +61,9 @@ int master(int n_procs_world) {
     fprintf(f, "%zu-%zu-%zu-%zu-%u\n", sizeof(double), c.tot_rows, c.tot_cols,
             (size_t)(c.n_steps / c.save_period), c.framerate);
 
+    END_TIMER;
     for (size_t s = 0; s < c.n_steps; s += c.save_period) {
+        START_TIMER("m save", MASTER_RANK);
         LOGF("M[]: step: %zu / %zu.", s, c.n_steps);
         for (int w = 0; w < n_workers; w++) {
             int *w_info = recv_coords + w * 3;
@@ -75,6 +81,7 @@ int master(int n_procs_world) {
         }
         // Save frame to file
         fwrite((void *)frame, sizeof(double), c.tot_cols * c.tot_rows, f);
+        END_TIMER;
     }
 
     LOGF("M[]: step: %zu / %zu.", c.n_steps, c.n_steps);

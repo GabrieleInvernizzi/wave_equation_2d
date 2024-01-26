@@ -57,6 +57,7 @@ dkms.conf
 .clangd
 
 # Simulation and video files
+*.err
 *.csv
 *.sim
 *.mp4
