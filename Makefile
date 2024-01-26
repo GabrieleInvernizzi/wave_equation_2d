@@ -16,6 +16,10 @@ ifeq ($(profile),true)
 	CFLAGS += -gdwarf -fno-omit-frame-pointer
 endif
 
+ifeq ($(timings),true)
+	DEFS += -DCOLLECT_TIMINGS
+endif
+
 
 BIN_PATH := bin
 OBJ_PATH_BASE := bin/objs

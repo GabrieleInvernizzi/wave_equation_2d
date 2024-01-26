@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "log.h"
+#include "timings.h"
 #include "sim.h"
 
 SimConf get_sim_conf() {
@@ -39,6 +40,8 @@ int main() {
     sim(c, f);
 
     fclose(f);
+
+    SAVE_TIMINGS;
 
     return 0;
 }
