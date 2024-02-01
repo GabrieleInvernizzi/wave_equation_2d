@@ -1,32 +1,13 @@
 #include <stdio.h>
 
+#include "sim_conf.h"
 #include "log.h"
 #include "timings.h"
 #include "sim.h"
 
-SimConf get_sim_conf() {
-    SimConf c = {.filepath = "out.sim",
-                 .save_period = 2,
-                 .duration = 10,
-                 .dt = 0.01,
-                 .c = 1.0,
-                 .domain_width = 5,
-                 .domain_height = 5,
-                 .dx = 0.01,
-                 .dy = 0.01};
 
-    c.n_steps = (size_t)(c.duration / c.dt);
-    c.framerate = 1.0 / (c.dt * c.save_period);
-    c.cols = (size_t)(c.domain_width / c.dx);
-    c.rows = (size_t)(c.domain_height / c.dy);
-    c.tot_cols = c.cols + 2;
-    c.tot_rows = c.rows + 2;
-
-    return c;
-}
-
-int main() {
-    const SimConf c = get_sim_conf();
+int main(int argc, char** argv) {
+    const SimConf c = get_sim_conf(argc, argv);
     // Create the file to save all the frames
     FILE *f = fopen(c.filepath, "wb");
     if (!f) {

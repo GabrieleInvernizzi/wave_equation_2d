@@ -8,7 +8,6 @@
 
 #include "timings.h"
 #include "log.h"
-#include "sim_conf.h"
 
 static void set_init_conds(size_t tot_rows, size_t tot_cols,
                            double (*u0)[tot_cols], double (*u1)[tot_cols],
@@ -73,11 +72,9 @@ static inline void calc_boundary_conds(size_t tot_rows, size_t tot_cols,
     }
 }
 
-int worker(MPI_Comm comm, int my_rank_world, int master_rank) {
+int worker(SimConf c, MPI_Comm comm, int my_rank_world, int master_rank) {
     int my_rank;
     int n_procs;
-
-    SimConf c = get_sim_conf();
 
     START_TIMER("w init mpi", my_rank_world);
 

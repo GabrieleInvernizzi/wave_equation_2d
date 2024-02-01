@@ -97,10 +97,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     return 0;
 }
 
+static struct argp argp = {options, parse_opt, args_doc, doc};
 
-static struct argp argp = { options, parse_opt, args_doc, doc };
-
-SimConf get_sim_conf(int argc, char** argv, int is_master) {
+SimConf get_sim_conf(int argc, char **argv) {
     SimConf c = {.filepath = "out.sim",
                  .save_period = 2,
                  .duration = 10,
@@ -111,7 +110,7 @@ SimConf get_sim_conf(int argc, char** argv, int is_master) {
                  .dx = 0.01,
                  .dy = 0.01};
 
-    argp_parse(&argp, argc, argv, is_master ? 0 : ARGP_SILENT, 0, &c);
+    argp_parse(&argp, argc, argv, 0, 0, &c);
 
     c.n_steps = (size_t)(c.duration / c.dt);
     c.framerate = 1.0 / (c.dt * c.save_period);

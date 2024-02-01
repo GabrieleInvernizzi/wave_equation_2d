@@ -4,6 +4,7 @@
 
 #include "log.h"
 #include "master_worker.h"
+#include "sim_conf.h"
 
 int main(int argc, char *argv[]) {
     int n_procs_world, my_rank_world;
@@ -16,13 +17,16 @@ int main(int argc, char *argv[]) {
     side_len = (int)sqrt(n_procs_world - 1);
 
     if ((n_procs_world - 1) != (side_len * side_len)) {
-        if (my_rank_world == 0)
+        if (my_rank_world == MASTER_RANK) {
             LOGF("M[]: the number of processors must be a perfect square + 1 "
                    "but is %d.",
                    n_procs_world);
+        }
         MPI_Finalize();
         return 1;
     }
+    // Get sim conf
+    const SimConf c = get_sim_conf(argc, argv, (my_rank_world == MASTER_RANK ? 1 : 0));
 
     // Split master and workers
     MPI_Comm worker_comm = MPI_COMM_NULL;
@@ -33,9 +37,9 @@ int main(int argc, char *argv[]) {
 
     int ret;
     if (my_rank_world == MASTER_RANK) {
-        ret = master(n_procs_world);
+        ret = master(c, n_procs_world);
     } else {
-        ret = worker(worker_comm, my_rank_world, MASTER_RANK);
+        ret = worker(c, worker_comm, my_rank_world, MASTER_RANK);
     }
 
     if (worker_comm != MPI_COMM_NULL)

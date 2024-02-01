@@ -28,4 +28,4 @@ typedef struct {
     size_t tot_rows;
 } SimConf;
 
-SimConf get_sim_conf(int argc, char** argv, int is_master);
+SimConf get_sim_conf(int argc, char** argv);

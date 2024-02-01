@@ -7,12 +7,9 @@
 
 #include "timings.h"
 #include "log.h"
-#include "sim_conf.h"
 
-int master(int n_procs_world) {
+int master(SimConf c, int n_procs_world) {
     FILE *f = NULL;
-
-    SimConf c = get_sim_conf();
 
     START_TIMER("m init", MASTER_RANK);
 
