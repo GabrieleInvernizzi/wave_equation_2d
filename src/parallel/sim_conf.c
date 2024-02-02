@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-const char *argp_program_version = "wave_eq 1.0.0";
+const char *argp_program_version = "wave_eq_p 1.0.0";
 error_t argp_err_exit_status = PARSING_EXIT_FAILURE;
 
 static const char doc[] = "";
@@ -56,9 +56,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         argp_state_help(state, state->out_stream,
                         ARGP_HELP_STD_USAGE | ARGP_HELP_EXIT_OK);
         return PARSING_EXIT_SUCCESS;
-    case ARGP_VERSION:
-        fprintf(state->out_stream, "%s\n", argp_program_version);
+    case ARGP_VERSION: {
+        if ((state->flags & ARGP_SILENT) != ARGP_SILENT)
+            fprintf(state->out_stream, "%s\n", argp_program_version);
         return PARSING_EXIT_SUCCESS;
+    }
 
     case ARGP_FILEPATH:
         conf->filepath = arg;

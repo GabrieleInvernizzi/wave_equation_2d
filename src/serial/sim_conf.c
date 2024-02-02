@@ -3,7 +3,7 @@
 #include <argp.h>
 #include <stdlib.h>
 
-const char *argp_program_version = "wave_eq 1.0.0";
+const char *argp_program_version = "wave_eq_s 1.0.0";
 error_t argp_err_exit_status = PARSING_ERROR_EXIT_CODE;
 
 static const char doc[] = "";
