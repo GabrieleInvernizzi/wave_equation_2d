@@ -2,9 +2,8 @@
 
 #include <stddef.h>
 
-
-#define PARSING_ERROR_EXIT_CODE (-3);
-
+#define PARSING_EXIT_SUCCESS (2)
+#define PARSING_EXIT_FAILURE (1)
 
 typedef struct {
     // File
@@ -28,4 +27,4 @@ typedef struct {
     size_t tot_rows;
 } SimConf;
 
-SimConf get_sim_conf(int argc, char** argv, int is_master);
+SimConf get_sim_conf(int argc, char **argv, int is_master, int *err);

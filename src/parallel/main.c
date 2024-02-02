@@ -26,7 +26,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     // Get sim conf
-    const SimConf c = get_sim_conf(argc, argv, (my_rank_world == MASTER_RANK ? 1 : 0));
+    int parse_err;
+    const SimConf c = get_sim_conf(argc, argv, (my_rank_world == MASTER_RANK ? 1 : 0), &parse_err);
+    if (parse_err != 0) {
+        MPI_Finalize();
+        return (parse_err == PARSING_EXIT_SUCCESS) ? 0 : 1;
+    }
 
     // Split master and workers
     MPI_Comm worker_comm = MPI_COMM_NULL;
