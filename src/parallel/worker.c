@@ -201,6 +201,17 @@ int worker(SimConf c, MPI_Comm comm, int my_rank_world, int master_rank) {
     double C = c.c * (c.dt / c.dx);
     double C_sq = C * C;
 
+    // Check CFL condition
+    if (C > 0.5) {
+        if (my_cart_rank == 0) {
+            LOGF(
+                "The CFL condition is not satisfied.\nC = c * (dt / dx) = %f > "
+                "0.5.\nChoose the parameters so that C <= 0.5.\nExiting.",
+                C);
+        }
+        return 1;
+    }
+
     set_init_conds(tot_n_cells, u0, u1, u2);
 
     END_TIMER;

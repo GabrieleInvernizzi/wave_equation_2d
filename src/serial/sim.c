@@ -5,10 +5,10 @@
 #include <stdlib.h>
 
 #include "arena_alloc.h"
-#include "timings.h"
 #include "log.h"
+#include "timings.h"
 
-void sim(SimConf c, FILE *f) {
+int sim(SimConf c, FILE *f) {
     // Init arrays
     const size_t arr_size = c.tot_n_cells * sizeof(double[c.tot_n_cells]);
     const size_t arena_size = 3 * arr_size;
@@ -26,6 +26,14 @@ void sim(SimConf c, FILE *f) {
     // Courant numbers
     double C = c.c * (c.dt / c.dx);
     double C_sq = C * C;
+
+    // Check CFL condition
+    if (C > 0.5) {
+        LOGF("The CFL condition is not satisfied.\nC = c * (dt / dx) = %f > "
+             "0.5.\nChoose the parameters so that C <= 0.5.\nExiting.",
+             C);
+        return 1;
+    }
 
     LOGF("Starting simulation.\nstep: 0 / %zu.", c.n_steps);
 
@@ -45,11 +53,11 @@ void sim(SimConf c, FILE *f) {
         START_TIMER("c");
         for (size_t j = 1; j < c.tot_n_cells - 1; j++) {
             for (size_t i = 1; i < c.tot_n_cells - 1; i++) {
-                u0[i][j] = 2 * u1[i][j] - u2[i][j] +
-                           (0.5 * C_sq) *
-                               (u1[i][j - 1] - 2 * u1[i][j] + u1[i][j + 1]) +
-                           (0.5 * C_sq) *
-                               (u1[i - 1][j] - 2 * u1[i][j] + u1[i + 1][j]);
+                u0[i][j] =
+                    2 * u1[i][j] - u2[i][j] +
+                    (0.5 * C_sq) *
+                        (u1[i][j - 1] - 2 * u1[i][j] + u1[i][j + 1]) +
+                    (0.5 * C_sq) * (u1[i - 1][j] - 2 * u1[i][j] + u1[i + 1][j]);
             }
         }
 
@@ -79,11 +87,14 @@ void sim(SimConf c, FILE *f) {
         // Save the frame
         if (step % c.save_period == 0) {
             LOGF("step: %zu / %zu.", step, c.n_steps);
-            fwrite((void *)u1, sizeof(double), c.tot_n_cells * c.tot_n_cells, f);
+            fwrite((void *)u1, sizeof(double), c.tot_n_cells * c.tot_n_cells,
+                   f);
         }
     }
 
     LOGF("step: %zu / %zu.\nFinished.", c.n_steps, c.n_steps);
 
     area_deinit(&arena);
+
+    return 0;
 }

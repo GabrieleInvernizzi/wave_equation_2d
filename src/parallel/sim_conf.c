@@ -124,7 +124,7 @@ SimConf get_sim_conf(int argc, char **argv, int is_master, int *err) {
     SimConf c = {.filepath = "out.sim",
                  .save_period = 2,
                  .duration = 10,
-                 .dt = 0.01,
+                 .dt = 0.005,
                  .c = 1.0,
                  .domain_size = 5,
                  .dx = 0.01};
