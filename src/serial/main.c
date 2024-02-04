@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    fprintf(f, "%zu-%zu-%zu-%zu-%u\n", sizeof(double), c.tot_rows, c.tot_cols,
+    fprintf(f, "%zu-%zu-%zu-%zu-%u\n", sizeof(double), c.tot_n_cells, c.tot_n_cells,
             (size_t)(c.n_steps / c.save_period), c.framerate);
 
     sim(c, f);

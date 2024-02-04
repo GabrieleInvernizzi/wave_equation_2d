@@ -27,12 +27,12 @@ static struct argp_option options[] = {
      "Size of the domain, since it is a square domain this is the length of "
      "the side."},
     {0, ARGP_VEL, "SPEED", 0, "Speed of the medium."},
-    {"dx", ARGP_DX, "DX", 0,
-     "dx value (dy will be the same)."},
+    {"dx", ARGP_DX, "DX", 0, "dx value (dy will be the same)."},
     {"dt", ARGP_DT, "DT", 0, "dt value."},
     {"save-period", ARGP_SAVE_PERIOD, "PERIOD", 0,
      "Save to file one every PERIOD frames."},
-    {"duration", ARGP_DURATION, "DURATION", 0, "Duration of the simulation in seconds."},
+    {"duration", ARGP_DURATION, "DURATION", 0,
+     "Duration of the simulation in seconds."},
     {0}};
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
@@ -54,8 +54,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         double val = atof(arg);
         if (val == 0.0)
             return 1;
-        conf->domain_width = val;
-        conf->domain_height = val;
+        conf->domain_size = val;
         break;
     }
 
@@ -80,7 +79,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         if (val == 0.0)
             return 1;
         conf->dx = val;
-        conf->dy = val;
         break;
     }
     case ARGP_DT: {
@@ -105,19 +103,15 @@ SimConf get_sim_conf(int argc, char **argv) {
                  .duration = 10,
                  .dt = 0.01,
                  .c = 1.0,
-                 .domain_width = 5,
-                 .domain_height = 5,
-                 .dx = 0.01,
-                 .dy = 0.01};
+                 .domain_size = 5,
+                 .dx = 0.01};
 
     argp_parse(&argp, argc, argv, 0, 0, &c);
 
     c.n_steps = (size_t)(c.duration / c.dt);
     c.framerate = 1.0 / (c.dt * c.save_period);
-    c.cols = (size_t)(c.domain_width / c.dx);
-    c.rows = (size_t)(c.domain_height / c.dy);
-    c.tot_cols = c.cols + 2;
-    c.tot_rows = c.rows + 2;
+    c.n_cells = (size_t)(c.domain_size / c.dx);
+    c.tot_n_cells = c.n_cells + 2;
 
     return c;
 }
