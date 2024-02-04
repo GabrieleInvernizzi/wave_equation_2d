@@ -6,7 +6,9 @@
 const char *argp_program_version = "wave_eq_s 1.0.0";
 error_t argp_err_exit_status = PARSING_ERROR_EXIT_CODE;
 
-static const char doc[] = "";
+static const char doc[] =
+    "wave_eq_s is a serial 2d wave equation solver.\n"
+    "The simulation is saved in the output file as the list of raw frames (the first line is the metadata).\n";
 static const char args_doc[] = "";
 
 enum ArgpOptionCodes {
