@@ -72,47 +72,58 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         break;
     case ARGP_SAVE_PERIOD: {
         int val = atoi(arg);
-        if (val < 1)
+        if (val < 1) {
+            argp_error(state, "--save-period accepts ints grater than 0.");
             return PARSING_EXIT_FAILURE;
+        }
         conf->save_period = val;
     }
 
     case ARGP_SIZE: {
-
         double val = atof(arg);
-        if (val == 0.0)
+        if (val <= 0.0) {
+            argp_error(state, "--size accepts floats grater than 0.");
             return PARSING_EXIT_FAILURE;
+        }
         conf->domain_size = val;
         break;
     }
 
     case ARGP_VEL: {
         double val = atof(arg);
-        if (val == 0.0)
+        if (val <= 0.0) {
+            argp_error(state, "-c accepts floats grater than 0.");
             return PARSING_EXIT_FAILURE;
+        }
         conf->c = val;
         break;
     }
 
     case ARGP_DURATION: {
         double val = atof(arg);
-        if (val == 0.0)
+        if (val <= 0.0) {
+            argp_error(state, "--duration accepts floats grater than 0.");
             return PARSING_EXIT_FAILURE;
+        }
         conf->c = val;
         break;
     }
 
     case ARGP_DX: {
         double val = atof(arg);
-        if (val == 0.0)
+        if (val <= 0.0) {
+            argp_error(state, "--dx accepts floats grater than 0.");
             return PARSING_EXIT_FAILURE;
+        }
         conf->dx = val;
         break;
     }
     case ARGP_DT: {
         double val = atof(arg);
-        if (val == 0.0)
+        if (val <= 0.0) {
+            argp_error(state, "--dt accepts floats grater than 0.");
             return PARSING_EXIT_FAILURE;
+        }
         conf->dt = val;
         break;
     }

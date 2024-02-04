@@ -46,55 +46,71 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case ARGP_FILEPATH:
         conf->filepath = arg;
         break;
+
     case ARGP_SAVE_PERIOD: {
         int val = atoi(arg);
-        if (val < 1)
+        if (val < 1) {
+            argp_error(state, "--save-period accepts ints grater than 0.");
             return 1;
+        }
         conf->save_period = val;
     }
 
     case ARGP_SIZE: {
 
         double val = atof(arg);
-        if (val == 0.0)
+        if (val <= 0.0) {
+            argp_error(state, "--size accepts floats grater than 0.");
             return 1;
+        }
         conf->domain_size = val;
         break;
     }
 
     case ARGP_VEL: {
         double val = atof(arg);
-        if (val == 0.0)
+        if (val <= 0.0) {
+            argp_error(state, "-c accepts floats grater than 0.");
             return 1;
+        }
         conf->c = val;
         break;
     }
 
     case ARGP_DURATION: {
         double val = atof(arg);
-        if (val == 0.0)
+        if (val <= 0.0) {
+            argp_error(state, "--duration accepts floats grater than 0.");
             return 1;
+        }
         conf->c = val;
         break;
     }
 
     case ARGP_DX: {
         double val = atof(arg);
-        if (val == 0.0)
+        if (val <= 0.0) {
+            argp_error(state, "--dx accepts floats grater than 0.");
             return 1;
+        }
         conf->dx = val;
         break;
     }
+
     case ARGP_DT: {
         double val = atof(arg);
-        if (val == 0.0)
+        if (val <= 0.0) {
+            argp_error(state, "--dt accepts floats grater than 0.");
             return 1;
+        }
         conf->dt = val;
         break;
     }
+
     case ARGP_IGNORE_CFL:
         conf->ignore_cfl = 1;
         break;
+
     default:
         return ARGP_ERR_UNKNOWN;
     }
