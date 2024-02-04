@@ -28,7 +28,7 @@ int sim(SimConf c, FILE *f) {
     double C_sq = C * C;
 
     // Check CFL condition
-    if (C > 0.5) {
+    if (C > 0.5 && (!c.ignore_cfl)) {
         LOGF("The CFL condition is not satisfied.\nC = c * (dt / dx) = %f > "
              "0.5.\nChoose the parameters so that C <= 0.5.\nExiting.",
              C);

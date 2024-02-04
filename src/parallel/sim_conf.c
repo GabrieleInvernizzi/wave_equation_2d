@@ -23,7 +23,8 @@ enum ArgpOptionCodes {
     // Must be non-ascii
     ARGP_DX = 0x80,
     ARGP_DT = 0x81,
-    ARGP_SAVE_PERIOD = 0x82
+    ARGP_SAVE_PERIOD = 0x82,
+    ARGP_IGNORE_CFL = 0x83
 };
 
 static struct argp_option options[] = {
@@ -43,6 +44,7 @@ static struct argp_option options[] = {
      "Save to file one every PERIOD frames."},
     {"duration", ARGP_DURATION, "DURATION", 0,
      "Duration of the simulation in seconds."},
+    {"ignore-cfl", ARGP_IGNORE_CFL, 0, 0, "Ignore CFL condition (waring: could lead to unwanted results)."},
     {0}};
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
@@ -111,6 +113,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         conf->dt = val;
         break;
     }
+
+    case ARGP_IGNORE_CFL:
+        conf->ignore_cfl = 1;
+        break;
+
     default:
         return ARGP_ERR_UNKNOWN;
     }
@@ -127,7 +134,8 @@ SimConf get_sim_conf(int argc, char **argv, int is_master, int *err) {
                  .dt = 0.005,
                  .c = 1.0,
                  .domain_size = 5,
-                 .dx = 0.01};
+                 .dx = 0.01,
+                 .ignore_cfl = 0};
 
     (*err) = argp_parse(
         &argp, argc, argv,

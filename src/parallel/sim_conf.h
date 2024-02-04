@@ -21,6 +21,7 @@ typedef struct {
     double dx;
     size_t n_cells;
     size_t tot_n_cells;
+    int ignore_cfl;
 } SimConf;
 
 SimConf get_sim_conf(int argc, char **argv, int is_master, int *err);

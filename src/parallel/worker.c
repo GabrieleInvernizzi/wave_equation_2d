@@ -202,7 +202,7 @@ int worker(SimConf c, MPI_Comm comm, int my_rank_world, int master_rank) {
     double C_sq = C * C;
 
     // Check CFL condition
-    if (C > 0.5) {
+    if (C > 0.5 && (!c.ignore_cfl)) {
         if (my_cart_rank == 0) {
             LOGF(
                 "The CFL condition is not satisfied.\nC = c * (dt / dx) = %f > "
