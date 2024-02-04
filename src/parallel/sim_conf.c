@@ -143,7 +143,7 @@ static struct argp argp = {options, parse_opt, args_doc, doc};
 
 SimConf get_sim_conf(int argc, char **argv, int is_master, int *err) {
     SimConf c = {.filepath = "out.sim",
-                 .save_period = 2,
+                 .save_period = 4,
                  .duration = 10,
                  .dt = 0.005,
                  .c = 1.0,

@@ -47,6 +47,8 @@ int main(int argc, char *argv[]) {
         ret = worker(c, worker_comm, my_rank_world, MASTER_RANK);
     }
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     if (worker_comm != MPI_COMM_NULL)
         MPI_Comm_free(&worker_comm);
 

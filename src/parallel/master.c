@@ -11,6 +11,11 @@
 int master(SimConf c, int n_procs_world) {
     FILE *f = NULL;
 
+    // Check for CFL condition
+    if ((c.c * (c.dt / c.dx) > 0.5) && (!c.ignore_cfl)) {
+        return 1;
+    }
+
     START_TIMER("m init", MASTER_RANK);
 
     int n_workers = n_procs_world - 1;
