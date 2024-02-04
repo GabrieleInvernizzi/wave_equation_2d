@@ -77,8 +77,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         double val = atof(arg);
         if (val == 0.0)
             return PARSING_EXIT_FAILURE;
-        conf->domain_width = val;
-        conf->domain_height = val;
+        conf->domain_size = val;
         break;
     }
 
@@ -103,7 +102,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         if (val == 0.0)
             return PARSING_EXIT_FAILURE;
         conf->dx = val;
-        conf->dy = val;
         break;
     }
     case ARGP_DT: {
@@ -128,10 +126,8 @@ SimConf get_sim_conf(int argc, char **argv, int is_master, int *err) {
                  .duration = 10,
                  .dt = 0.01,
                  .c = 1.0,
-                 .domain_width = 5,
-                 .domain_height = 5,
-                 .dx = 0.01,
-                 .dy = 0.01};
+                 .domain_size = 5,
+                 .dx = 0.01};
 
     (*err) = argp_parse(
         &argp, argc, argv,
@@ -141,10 +137,8 @@ SimConf get_sim_conf(int argc, char **argv, int is_master, int *err) {
 
     c.n_steps = (size_t)(c.duration / c.dt);
     c.framerate = 1.0 / (c.dt * c.save_period);
-    c.cols = (size_t)(c.domain_width / c.dx);
-    c.rows = (size_t)(c.domain_height / c.dy);
-    c.tot_cols = c.cols + 2;
-    c.tot_rows = c.rows + 2;
+    c.n_cells = (size_t)(c.domain_size / c.dx);
+    c.tot_n_cells = c.n_cells + 2;
 
     return c;
 }

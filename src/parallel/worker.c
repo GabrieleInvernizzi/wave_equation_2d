@@ -1,19 +1,19 @@
 #include "arena_alloc.h"
 #include "master_worker.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
-#include "timings.h"
 #include "log.h"
+#include "timings.h"
 
-static void set_init_conds(size_t tot_rows, size_t tot_cols,
-                           double (*u0)[tot_cols], double (*u1)[tot_cols],
-                           double (*u2)[tot_cols]) {
-    for (size_t j = 0; j < tot_cols; j++) {
-        for (size_t i = 0; i < tot_rows; i++) {
+static void set_init_conds(size_t tot_n_cells, double (*u0)[tot_n_cells],
+                           double (*u1)[tot_n_cells],
+                           double (*u2)[tot_n_cells]) {
+    for (size_t j = 0; j < tot_n_cells; j++) {
+        for (size_t i = 0; i < tot_n_cells; i++) {
             u2[i][j] = 0.0;
             u1[i][j] = 0.0;
             u0[i][j] = 0.0;
@@ -21,42 +21,41 @@ static void set_init_conds(size_t tot_rows, size_t tot_cols,
     }
 }
 
-static inline void calc_u0_inner_cells(size_t tot_rows, size_t tot_cols,
-                                       double (*u0)[tot_cols],
-                                       double (*u1)[tot_cols],
-                                       double (*u2)[tot_cols], double Cx_sq,
-                                       double Cy_sq) {
+static inline void calc_u0_inner_cells(size_t tot_n_cells,
+                                       double (*u0)[tot_n_cells],
+                                       double (*u1)[tot_n_cells],
+                                       double (*u2)[tot_n_cells], double C_sq) {
 
     // Cell calc
-    for (size_t j = 1; j < tot_cols - 1; j++) {
-        for (size_t i = 1; i < tot_rows - 1; i++) {
+    for (size_t j = 1; j < tot_n_cells - 1; j++) {
+        for (size_t i = 1; i < tot_n_cells - 1; i++) {
             u0[i][j] =
                 2 * u1[i][j] - u2[i][j] +
-                (0.5 * Cx_sq) * (u1[i][j - 1] - 2 * u1[i][j] + u1[i][j + 1]) +
-                (0.5 * Cy_sq) * (u1[i - 1][j] - 2 * u1[i][j] + u1[i + 1][j]);
+                (0.5 * C_sq) * (u1[i][j - 1] - 2 * u1[i][j] + u1[i][j + 1]) +
+                (0.5 * C_sq) * (u1[i - 1][j] - 2 * u1[i][j] + u1[i + 1][j]);
         }
     }
 }
 
-static inline void calc_forcing(size_t tot_rows, size_t tot_cols,
-                                double (*u0)[tot_cols], int coords[2],
-                                int f_coord, size_t f_offset, double dt,
-                                double t) {
+static inline void calc_forcing(size_t tot_n_cells, double (*u0)[tot_n_cells],
+                                int coords[2], int f_coord, size_t f_offset,
+                                double dt, double t) {
     // Forcing term (only in the region where it is applied)
     if (coords[0] == f_coord && coords[1] == f_coord) {
         u0[f_offset][f_offset] += dt * dt * 200 * sin(2 * M_PI * 2 * t);
     }
 }
 
-static inline void calc_boundary_conds(size_t tot_rows, size_t tot_cols,
-                                       double (*u0)[tot_cols], int neighs[4]) {
+static inline void calc_boundary_conds(size_t tot_n_cells,
+                                       double (*u0)[tot_n_cells],
+                                       int neighs[4]) {
 
     // calc top and down boundary conds
     for (size_t s = 0; s < 4; s += 2) {
         // There is no neighbor so we enforce boundary conds
         if (neighs[s] == MPI_PROC_NULL) {
-            size_t i = (s == 0 ? 0 : (tot_cols - 1));
-            for (size_t j = 1; j < tot_cols - 1; j++)
+            size_t i = (s == 0 ? 0 : (tot_n_cells - 1));
+            for (size_t j = 1; j < tot_n_cells - 1; j++)
                 u0[i][j] = (s == 0 ? u0[2][j] : u0[i - 2][j]);
         }
     }
@@ -65,8 +64,8 @@ static inline void calc_boundary_conds(size_t tot_rows, size_t tot_cols,
     for (size_t s = 1; s < 4; s += 2) {
         // There is no neighbor so we enforce boundary conds
         if (neighs[s] == MPI_PROC_NULL) {
-            size_t i = (s == 1 ? 0 : (tot_rows - 1));
-            for (size_t j = 1; j < tot_rows - 1; j++)
+            size_t i = (s == 1 ? 0 : (tot_n_cells - 1));
+            for (size_t j = 1; j < tot_n_cells - 1; j++)
                 u0[j][i] = (s == 1 ? u0[j][2] : u0[j][i - 2]);
         }
     }
@@ -149,14 +148,12 @@ int worker(SimConf c, MPI_Comm comm, int my_rank_world, int master_rank) {
 
     START_TIMER("w init sim", my_rank_world);
     // Sim
-    size_t cols = c.cols / dims[0];
-    size_t rows = c.rows / dims[1];
-    size_t tot_cols = cols + 2;
-    size_t tot_rows = rows + 2;
+    size_t n_cells = c.n_cells / dims[0];
+    size_t tot_n_cells = n_cells + 2;
 
     // Init arena
-    const size_t tot_gh_cells = 2 * (rows + cols);
-    const size_t arena_size = 3 * tot_rows * sizeof(double[tot_cols]) +
+    const size_t tot_gh_cells = 2 * (n_cells + n_cells);
+    const size_t arena_size = 3 * tot_n_cells * sizeof(double[tot_n_cells]) +
                               2 * tot_gh_cells * sizeof(double);
 
     Arena arena;
@@ -165,31 +162,31 @@ int worker(SimConf c, MPI_Comm comm, int my_rank_world, int master_rank) {
              my_cart_rank, arena_size);
 
     // Init arrays
-    double(*u_tmp)[tot_cols] = NULL;
-    double(*u0)[tot_cols] =
-        arena_alloc(&arena, tot_rows * sizeof(double[tot_cols])); // u(k)
-    double(*u1)[tot_cols] =
-        arena_alloc(&arena, tot_rows * sizeof(double[tot_cols])); // u(k-1)
-    double(*u2)[tot_cols] =
-        arena_alloc(&arena, tot_rows * sizeof(double[tot_cols])); // u(k-2)
+    double(*u_tmp)[tot_n_cells] = NULL;
+    double(*u0)[tot_n_cells] =
+        arena_alloc(&arena, tot_n_cells * sizeof(double[tot_n_cells])); // u(k)
+    double(*u1)[tot_n_cells] = arena_alloc(
+        &arena, tot_n_cells * sizeof(double[tot_n_cells])); // u(k-1)
+    double(*u2)[tot_n_cells] = arena_alloc(
+        &arena, tot_n_cells * sizeof(double[tot_n_cells])); // u(k-2)
     assert(u0);
     assert(u1);
     assert(u2);
 
     // Init ghost cells
     double *send_buf = arena_alloc(&arena, tot_gh_cells * sizeof(double));
-    double *send_buf_sides[4] = {send_buf, send_buf + cols,
-                                 send_buf + cols + rows,
-                                 send_buf + 2 * cols + rows};
+    double *send_buf_sides[4] = {send_buf, send_buf + n_cells,
+                                 send_buf + n_cells + n_cells,
+                                 send_buf + 2 * n_cells + n_cells};
     double *recv_buf = arena_alloc(&arena, tot_gh_cells * sizeof(double));
     assert(send_buf);
     assert(recv_buf);
 
     // {top, left, down, right} as before
-    double *recv_buf_sides[4] = {recv_buf, recv_buf + cols,
-                                 recv_buf + cols + rows,
-                                 recv_buf + 2 * cols + rows};
-    double gh_cells_counts[2] = {cols, rows};
+    double *recv_buf_sides[4] = {recv_buf, recv_buf + n_cells,
+                                 recv_buf + n_cells + n_cells,
+                                 recv_buf + 2 * n_cells + n_cells};
+    double gh_cells_counts[2] = {n_cells, n_cells};
     // init send and recv cells
     for (size_t i = 0; i < tot_gh_cells; i++) {
         recv_buf[i] = 0.0;
@@ -198,15 +195,13 @@ int worker(SimConf c, MPI_Comm comm, int my_rank_world, int master_rank) {
 
     // Forcing origin
     int f_coord = dims[0] / 2;
-    size_t f_offset = (dims[0] % 2 == 0) ? 1 : (tot_rows / 2);
+    size_t f_offset = (dims[0] % 2 == 0) ? 1 : (tot_n_cells / 2);
 
     // Courant numbers
-    double Cx = c.c * (c.dt / c.dx);
-    double Cx_sq = Cx * Cx;
-    double Cy = c.c * (c.dt / c.dy);
-    double Cy_sq = Cy * Cy;
+    double C = c.c * (c.dt / c.dx);
+    double C_sq = C * C;
 
-    set_init_conds(tot_rows, tot_cols, u0, u1, u2);
+    set_init_conds(tot_n_cells, u0, u1, u2);
 
     END_TIMER;
 
@@ -215,10 +210,9 @@ int worker(SimConf c, MPI_Comm comm, int my_rank_world, int master_rank) {
         t += c.dt;
 
         START_TIMER("w calc", my_rank_world);
-        calc_u0_inner_cells(tot_rows, tot_cols, u0, u1, u2, Cx_sq, Cy_sq);
-        calc_forcing(tot_rows, tot_cols, u0, coords, f_coord, f_offset, c.dt,
-                     t);
-        calc_boundary_conds(tot_rows, tot_cols, u0, neighs);
+        calc_u0_inner_cells(tot_n_cells, u0, u1, u2, C_sq);
+        calc_forcing(tot_n_cells, u0, coords, f_coord, f_offset, c.dt, t);
+        calc_boundary_conds(tot_n_cells, u0, neighs);
         END_TIMER;
 
         START_TIMER("w comm", my_rank_world);
@@ -232,9 +226,11 @@ int worker(SimConf c, MPI_Comm comm, int my_rank_world, int master_rank) {
                 // Copy the outer cells to send buf
                 for (size_t i = 0; i < gh_cells_counts[s % 2]; i++) {
                     if ((s % 2) == 0) // top and bottom
-                        send_buf_side[i] = u0[s == 0 ? 1 : (tot_rows - 2)][i];
+                        send_buf_side[i] =
+                            u0[s == 0 ? 1 : (tot_n_cells - 2)][i];
                     else // left and right
-                        send_buf_side[i] = u0[i][s == 1 ? 1 : (tot_cols - 2)];
+                        send_buf_side[i] =
+                            u0[i][s == 1 ? 1 : (tot_n_cells - 2)];
                 }
 
                 // Send the buf
@@ -248,9 +244,11 @@ int worker(SimConf c, MPI_Comm comm, int my_rank_world, int master_rank) {
                 // Copy back recved gh_cells
                 for (size_t i = 0; i < gh_cells_counts[s % 2]; i++) {
                     if ((s % 2) == 0) // top and bottom
-                        u0[s == 0 ? 0 : (tot_rows - 1)][i] = recv_buf_side[i];
+                        u0[s == 0 ? 0 : (tot_n_cells - 1)][i] =
+                            recv_buf_side[i];
                     else // left and right
-                        u0[i][s == 1 ? 0 : (tot_cols - 1)] = recv_buf_side[i];
+                        u0[i][s == 1 ? 0 : (tot_n_cells - 1)] =
+                            recv_buf_side[i];
                 }
             }
         }
@@ -266,7 +264,7 @@ int worker(SimConf c, MPI_Comm comm, int my_rank_world, int master_rank) {
         // Send frame (u1) to master
         if (step % c.save_period == 0) {
             MPI_Wait(&send_to_mastert_req, &last_status);
-            MPI_Isend(u1, tot_rows * tot_cols, MPI_DOUBLE, master_rank,
+            MPI_Isend(u1, tot_n_cells * tot_n_cells, MPI_DOUBLE, master_rank,
                       SEND_MASTER_TAG, MPI_COMM_WORLD, &send_to_mastert_req);
         }
         END_TIMER;

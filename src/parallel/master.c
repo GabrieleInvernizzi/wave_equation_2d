@@ -35,17 +35,15 @@ int master(SimConf c, int n_procs_world) {
     }
     int *recv_coords = recv_coords_with_master + 3;
 
-    const size_t w_cols = c.cols / dim;
-    const size_t w_rows = c.rows / dim;
-    const size_t w_tot_cols = w_cols + 2;
-    const size_t w_tot_rows = w_rows + 2;
+    const size_t w_n_cells = c.n_cells / dim;
+    const size_t w_tot_n_cells = w_n_cells + 2;
 
-    const size_t recv_buf_size = w_tot_rows * sizeof(double[w_tot_cols]);
-    double(*recv_buf)[w_tot_cols] = malloc(recv_buf_size);
+    const size_t recv_buf_size = w_tot_n_cells * sizeof(double[w_tot_n_cells]);
+    double(*recv_buf)[w_tot_n_cells] = malloc(recv_buf_size);
     assert(recv_buf);
 
-    double(*frame)[c.tot_cols] =
-        malloc(c.tot_rows * sizeof(double[c.tot_cols]));
+    double(*frame)[c.tot_n_cells] =
+        malloc(c.tot_n_cells * sizeof(double[c.tot_n_cells]));
     assert(frame);
 
     f = fopen(c.filepath, "wb");
@@ -55,7 +53,7 @@ int master(SimConf c, int n_procs_world) {
         return 1;
     }
 
-    fprintf(f, "%zu-%zu-%zu-%zu-%u\n", sizeof(double), c.tot_rows, c.tot_cols,
+    fprintf(f, "%zu-%zu-%zu-%zu-%u\n", sizeof(double), c.tot_n_cells, c.tot_n_cells,
             (size_t)(c.n_steps / c.save_period), c.framerate);
 
     END_TIMER;
@@ -68,16 +66,16 @@ int master(SimConf c, int n_procs_world) {
             MPI_Recv(recv_buf, recv_buf_size, MPI_DOUBLE, w_info[0],
                      SEND_MASTER_TAG, MPI_COMM_WORLD, &last_status);
             // Position it correctly
-            size_t i_base = w_info[1] == 0 ? 0 : (w_info[1] * w_tot_rows - 3);
-            size_t j_base = w_info[2] == 0 ? 0 : (w_info[2] * w_tot_cols - 3);
-            for (size_t j = 0; j < w_tot_cols; j++) {
-                for (size_t i = 0; i < w_tot_rows; i++) {
+            size_t i_base = w_info[1] == 0 ? 0 : (w_info[1] * w_tot_n_cells - 3);
+            size_t j_base = w_info[2] == 0 ? 0 : (w_info[2] * w_tot_n_cells - 3);
+            for (size_t j = 0; j < w_tot_n_cells; j++) {
+                for (size_t i = 0; i < w_tot_n_cells; i++) {
                     frame[i_base + i][j_base + j] = recv_buf[i][j];
                 }
             }
         }
         // Save frame to file
-        fwrite((void *)frame, sizeof(double), c.tot_cols * c.tot_rows, f);
+        fwrite((void *)frame, sizeof(double), c.tot_n_cells * c.tot_n_cells, f);
         END_TIMER;
     }
 

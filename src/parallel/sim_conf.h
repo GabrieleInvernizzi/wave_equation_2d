@@ -17,14 +17,10 @@ typedef struct {
     size_t n_steps;
 
     double c;
-    double domain_width;
-    double domain_height;
+    double domain_size;
     double dx;
-    double dy;
-    size_t cols;
-    size_t rows;
-    size_t tot_cols;
-    size_t tot_rows;
+    size_t n_cells;
+    size_t tot_n_cells;
 } SimConf;
 
 SimConf get_sim_conf(int argc, char **argv, int is_master, int *err);
