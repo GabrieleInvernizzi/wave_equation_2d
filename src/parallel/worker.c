@@ -12,8 +12,8 @@
 static void set_init_conds(size_t tot_n_cells, double (*u0)[tot_n_cells],
                            double (*u1)[tot_n_cells],
                            double (*u2)[tot_n_cells]) {
-    for (size_t j = 0; j < tot_n_cells; j++) {
-        for (size_t i = 0; i < tot_n_cells; i++) {
+    for (size_t i = 0; i < tot_n_cells; i++) {
+        for (size_t j = 0; j < tot_n_cells; j++) {
             u2[i][j] = 0.0;
             u1[i][j] = 0.0;
             u0[i][j] = 0.0;
@@ -27,8 +27,8 @@ static inline void calc_u0_inner_cells(size_t tot_n_cells,
                                        double (*u2)[tot_n_cells], double C_sq) {
 
     // Cell calc
-    for (size_t j = 1; j < tot_n_cells - 1; j++) {
-        for (size_t i = 1; i < tot_n_cells - 1; i++) {
+    for (size_t i = 1; i < tot_n_cells - 1; i++) {
+        for (size_t j = 1; j < tot_n_cells - 1; j++) {
             u0[i][j] =
                 2 * u1[i][j] - u2[i][j] +
                 (0.5 * C_sq) * (u1[i][j - 1] - 2 * u1[i][j] + u1[i][j + 1]) +

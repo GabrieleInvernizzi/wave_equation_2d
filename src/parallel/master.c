@@ -73,8 +73,8 @@ int master(SimConf c, int n_procs_world) {
             // Position it correctly
             size_t i_base = w_info[1] == 0 ? 0 : (w_info[1] * w_tot_n_cells - 3);
             size_t j_base = w_info[2] == 0 ? 0 : (w_info[2] * w_tot_n_cells - 3);
-            for (size_t j = 0; j < w_tot_n_cells; j++) {
-                for (size_t i = 0; i < w_tot_n_cells; i++) {
+            for (size_t i = 0; i < w_tot_n_cells; i++) {
+                for (size_t j = 0; j < w_tot_n_cells; j++) {
                     frame[i_base + i][j_base + j] = recv_buf[i][j];
                 }
             }

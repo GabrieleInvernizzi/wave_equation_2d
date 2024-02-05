@@ -38,8 +38,8 @@ int sim(SimConf c, FILE *f) {
     LOGF("Starting simulation.\nstep: 0 / %zu.", c.n_steps);
 
     // set initial conditions
-    for (size_t j = 0; j < c.tot_n_cells; j++) {
-        for (size_t i = 0; i < c.tot_n_cells; i++) {
+    for (size_t i = 0; i < c.tot_n_cells; i++) {
+        for (size_t j = 0; j < c.tot_n_cells; j++) {
             u2[i][j] = 0.0;
             u1[i][j] = 0.0;
             u0[i][j] = 0.0;
@@ -51,8 +51,8 @@ int sim(SimConf c, FILE *f) {
         t += c.dt;
 
         START_TIMER("c");
-        for (size_t j = 1; j < c.tot_n_cells - 1; j++) {
-            for (size_t i = 1; i < c.tot_n_cells - 1; i++) {
+        for (size_t i = 1; i < c.tot_n_cells - 1; i++) {
+            for (size_t j = 1; j < c.tot_n_cells - 1; j++) {
                 u0[i][j] =
                     2 * u1[i][j] - u2[i][j] +
                     (0.5 * C_sq) *
