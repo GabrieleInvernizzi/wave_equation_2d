@@ -10,7 +10,9 @@ error_t argp_err_exit_status = PARSING_EXIT_FAILURE;
 static const char doc[] =
     "wave_eq_p is a parallel 2d wave equation solver.\n"
     "The number of processors must be a perfect square + 1.\n"
-    "The simulation is saved in the output file as the list of raw frames (the first line is the metadata).\n";
+    "The simulation is saved in the output file as the list of raw frames (the "
+    "first line is the metadata). To create a video of the simulation use the "
+    "script sim2video.";
 static const char args_doc[] = "";
 
 enum ArgpOptionCodes {
@@ -36,18 +38,20 @@ static struct argp_option options[] = {
     {"usage", ARGP_USAGE, 0, 0, "Show usage.", 0},
 
     {"filepath", ARGP_FILEPATH, "PATH", 0,
-     "Filepath that will be used as simulation output.", 1},
+     "Filepath that will be used as simulation output (default: \"out.sim\")."},
     {"size", ARGP_SIZE, "SIZE", 0,
      "Size of the domain, since it is a square domain this is the length of "
-     "the side."},
-    {0, ARGP_VEL, "SPEED", 0, "Speed of the medium."},
-    {"dx", ARGP_DX, "DX", 0, "dx value (dy will be the same)."},
-    {"dt", ARGP_DT, "DT", 0, "dt value."},
+     "the sides (default: \"5.0\")."},
+    {0, ARGP_VEL, "SPEED", 0, "Speed of the medium (default: \"1.0\")."},
+    {"dx", ARGP_DX, "DX", 0,
+     "dx value (dy will be the same, default: \"0.01\")."},
+    {"dt", ARGP_DT, "DT", 0, "dt value (default: \"0.005\")."},
     {"save-period", ARGP_SAVE_PERIOD, "PERIOD", 0,
-     "Save to file one every PERIOD frames."},
+     "Save to file one every PERIOD frames (default: \"4\")."},
     {"duration", ARGP_DURATION, "DURATION", 0,
-     "Duration of the simulation in seconds."},
-    {"ignore-cfl", ARGP_IGNORE_CFL, 0, 0, "Ignore CFL condition (waring: could lead to unwanted results)."},
+     "Duration of the simulation in seconds (default: \"10.0\")."},
+    {"ignore-cfl", ARGP_IGNORE_CFL, 0, 0,
+     "Ignore CFL condition (waring: could lead to unwanted results)."},
     {0}};
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
