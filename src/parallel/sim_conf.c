@@ -109,7 +109,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             argp_error(state, "--duration accepts floats grater than 0.");
             return PARSING_EXIT_FAILURE;
         }
-        conf->c = val;
+        conf->duration = val;
         break;
     }
 
