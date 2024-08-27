@@ -2,7 +2,6 @@
 
 #include "sim_conf.h"
 #include "log.h"
-#include "timings.h"
 #include "sim.h"
 
 
@@ -22,8 +21,6 @@ int main(int argc, char** argv) {
     int res = sim(c, f);
 
     fclose(f);
-
-    SAVE_TIMINGS;
 
     return res;
 }

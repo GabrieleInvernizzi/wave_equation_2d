@@ -6,7 +6,6 @@
 
 #include "arena_alloc.h"
 #include "log.h"
-#include "timings.h"
 
 int sim(SimConf c, FILE *f) {
     // Init arrays
@@ -50,7 +49,6 @@ int sim(SimConf c, FILE *f) {
     for (size_t step = 0; step < c.n_steps; step++) {
         t += c.dt;
 
-        START_TIMER("c");
         for (size_t i = 1; i < c.tot_n_cells - 1; i++) {
             for (size_t j = 1; j < c.tot_n_cells - 1; j++) {
                 u0[i][j] =
@@ -81,8 +79,6 @@ int sim(SimConf c, FILE *f) {
         u2 = u1;
         u1 = u0;
         u0 = u_tmp;
-
-        END_TIMER;
 
         // Save the frame
         if (step % c.save_period == 0) {
