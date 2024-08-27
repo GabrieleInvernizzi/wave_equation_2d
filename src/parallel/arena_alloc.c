@@ -10,7 +10,6 @@ int arena_init(Arena *a, size_t cap) {
     a->max_idx = a->arena;
     if (!a->arena) return 1;
    
-
     a->max_idx = a->idx + cap;
 
     return 0;
@@ -32,7 +31,6 @@ void *arena_alloc(Arena *a, size_t n_bytes) {
     if (a->idx + n_bytes > a->max_idx)
         return NULL;
     
-
     void *ret = a->idx;
     a->idx += n_bytes;
 
